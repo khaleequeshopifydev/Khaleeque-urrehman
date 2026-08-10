@@ -1,28 +1,45 @@
 {%- comment -%}
   Tisso Vision Banner Section
   ─────────────────────────────────────────────────────────────────────────────
-  Custom section — do NOT use Dawn's ready-made hero/image-banner sections.
-  Implements the Figma "Gift Guide" banner with:
-    • Desktop: 3-col topbar + left-content / right-illustration hero + marquee
-    • Mobile:  centered heading/description on top, illustration below,
-               SHOP NOW button overlaid on illustration
-  Fonts: Jost (all UI text), Lustria (heading only)
-  Breakpoint: 750px — matches Horizon theme convention throughout
+  Custom section — Tisso Vision Gift Guide page.
+  Layout:
+    Desktop:
+      • Top bar: logo left | announcement center | CHOOSE GIFT right
+      • Hero: illustration fills full width (top portion) + left content
+        column overlaid on bottom-left, illustration continues right
+      • Marquee: scrolling strip
+    Mobile:
+      • Top bar: hamburger (three-bars.svg) left | TISSO VISON centered
+      • Hero: heading + description centered, illustration below,
+        SHOP NOW button overlaid on illustration
+      • Static text strip (no scroll)
+  Font: Jost (Google Fonts) — loaded via <link> in section head
+  All colors/sizes match exact Figma values provided.
   ─────────────────────────────────────────────────────────────────────────────
 {%- endcomment -%}
 
 {%- liquid
-  assign brand_text       = section.settings.brand_text
-  assign announcement     = section.settings.announcement_text
-  assign choose_gift_text = section.settings.choose_gift_text
-  assign choose_gift_url  = section.settings.choose_gift_url | default: '#'
-  assign heading          = section.settings.heading
-  assign description      = section.settings.description
-  assign shop_now_text    = section.settings.shop_now_text
-  assign shop_now_url     = section.settings.shop_now_url | default: '#'
-  assign marquee_text     = section.settings.marquee_text
+  assign brand_text         = section.settings.brand_text
+  assign announcement       = section.settings.announcement_text
+  assign choose_gift_text   = section.settings.choose_gift_text
+  assign choose_gift_url    = section.settings.choose_gift_url | default: '#'
+  assign heading            = section.settings.heading
+  assign description        = section.settings.description
+  assign shop_now_text      = section.settings.shop_now_text
+  assign shop_now_url       = section.settings.shop_now_url | default: '#'
+  assign marquee_text       = section.settings.marquee_text
+  assign mobile_strip_text  = section.settings.mobile_strip_text
 -%}
 
+{%- comment -%}
+  Load Jost from Google Fonts.
+  preconnect hints reduce DNS + TLS handshake latency.
+  display=swap prevents invisible text during font load.
+  Only Jost weights used in this design: 400 (Regular), 500 (Medium), 600 (SemiBold).
+{%- endcomment -%}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 {{- 'tissovision-banner.css' | asset_url | stylesheet_tag -}}
 
 <section
@@ -31,16 +48,16 @@
   id="tissovision-banner-{{ section.id }}"
 >
 
-  {%- comment -%}
+  {%- comment -%} ══════════════════════════════════════════════
     TOP BAR
-    Desktop: logo left | announcement center | CHOOSE GIFT button right
-    Mobile:  hidden — Dawn's own header renders above this section
-  {%- endcomment -%}
-  <div class="tv-banner__topbar" aria-hidden="false">
+    Desktop: logo | announcement | CHOOSE GIFT
+    Mobile:  hamburger | brand name centered | (nothing right)
+  ══════════════════════════════════════════════ {%- endcomment -%}
+  <div class="tv-banner__topbar">
     <div class="tv-banner__topbar-inner">
 
-      {%- comment -%} Brand logo SVG — loaded as <img> for performance (no JS needed) {%- endcomment -%}
-      <div class="tv-banner__brand">
+      {%- comment -%} Logo SVG — desktop only {%- endcomment -%}
+      <div class="tv-banner__brand tv-banner__brand--desktop">
         <img
           src="{{ 'tissovision-logo.svg' | asset_url }}"
           alt="{{ brand_text | escape }}"
@@ -52,25 +69,46 @@
         >
       </div>
 
-      {%- comment -%} Center announcement text {%- endcomment -%}
+      {%- comment -%} Mobile: hamburger icon left {%- endcomment -%}
+      <button
+        class="tv-banner__hamburger-btn tv-banner__hamburger-btn--mobile"
+        type="button"
+        aria-label="{{ 'accessibility.menu' | t }}"
+        aria-expanded="false"
+      >
+        <img
+          src="{{ 'three-bars.svg' | asset_url }}"
+          alt=""
+          class="tv-banner__hamburger-img"
+          width="22"
+          height="16"
+          loading="eager"
+          aria-hidden="true"
+        >
+      </button>
+
+      {%- comment -%} Mobile: brand name centered {%- endcomment -%}
+      <span class="tv-banner__brand-text tv-banner__brand-text--mobile">
+        {{- brand_text | escape -}}
+      </span>
+
+      {%- comment -%} Desktop: center announcement text {%- endcomment -%}
       {%- if announcement != blank -%}
-        <p class="tv-banner__announcement">
+        <p class="tv-banner__announcement tv-banner__announcement--desktop">
           {{- announcement | escape -}}
         </p>
       {%- endif -%}
 
       {%- comment -%}
-        CHOOSE GIFT button — yellow, right side
-        Uses <a> because it navigates — correct semantic element
+        CHOOSE GIFT — desktop only, yellow button
+        <a> element — navigates to a URL
       {%- endcomment -%}
       <a
         href="{{ choose_gift_url }}"
-        class="tv-banner__choose-gift"
-        {% if choose_gift_url == '#' -%}
-          aria-label="{{ choose_gift_text | escape }}"
-        {%- endif %}
+        class="tv-banner__choose-gift tv-banner__choose-gift--desktop"
+        {% if choose_gift_url == '#' %}aria-disabled="true"{% endif %}
       >
-        <span class="tv-banner__choose-gift-text">{{- choose_gift_text | escape -}}</span>
+        <span>{{- choose_gift_text | escape -}}</span>
         <span class="tv-banner__btn-icon" aria-hidden="true">
           <img
             src="{{ 'tissovision-arrow.svg' | asset_url }}"
@@ -86,14 +124,34 @@
     </div>
   </div>
 
-  {%- comment -%}
+  {%- comment -%} ══════════════════════════════════════════════
     HERO AREA
-    Desktop: left content column (heading + description + CTA) | right illustration (full-bleed)
-    Mobile:  heading + description centered on top, illustration below,
-             SHOP NOW button absolutely positioned over the illustration
-  {%- endcomment -%}
+    The illustration is one image used as the hero background.
+    It fills the entire hero container (position:absolute, cover).
+    The content column (heading + text + button) sits on top of
+    the bottom-left, with a white background behind the text only.
+    On desktop: illustration bleeds top edge (watch cut at top = intentional)
+    On mobile: content centered top, illustration below, button overlaid
+  ══════════════════════════════════════════════ {%- endcomment -%}
   <div class="tv-banner__hero">
 
+    {%- comment -%} Illustration — fills the entire hero background {%- endcomment -%}
+    <div class="tv-banner__illustration" aria-hidden="true">
+      <img
+        src="{{ 'tissovision-banner-illustration.svg' | asset_url }}"
+        alt=""
+        class="tv-banner__illustration-img"
+        loading="eager"
+        fetchpriority="high"
+        width="1440"
+        height="560"
+      >
+    </div>
+
+    {%- comment -%}
+      Content panel — positioned bottom-left on desktop
+      White background only behind the text block
+    {%- endcomment -%}
     <div class="tv-banner__content">
       <h1
         class="tv-banner__heading"
@@ -109,23 +167,20 @@
       {%- endif -%}
 
       {%- comment -%}
-        SHOP NOW button — <a> because it navigates
-        On mobile this is pulled out of flow and overlaid on the illustration
-        via absolute positioning defined in the mobile CSS block
+        SHOP NOW — <a> navigates, not a form submit
+        On mobile: absolute positioned over illustration
       {%- endcomment -%}
       <a
         href="{{ shop_now_url }}"
         class="tv-banner__shop-now"
-        {% if shop_now_url == '#' -%}
-          aria-label="{{ shop_now_text | escape }}"
-        {%- endif %}
+        {% if shop_now_url == '#' %}aria-disabled="true"{% endif %}
       >
-        <span class="tv-banner__shop-now-text">{{- shop_now_text | escape -}}</span>
+        <span>{{- shop_now_text | escape -}}</span>
         <span class="tv-banner__btn-icon" aria-hidden="true">
           <img
             src="{{ 'tissovision-arrow.svg' | asset_url }}"
             alt=""
-            class="tv-banner__arrow-img tv-banner__arrow-img--inverted"
+            class="tv-banner__arrow-img tv-banner__arrow-img--white"
             width="20"
             height="16"
             loading="lazy"
@@ -134,47 +189,36 @@
       </a>
     </div>
 
-    {%- comment -%}
-      Illustration — decorative, aria-hidden
-      Fills the right column on desktop, bottom area on mobile
-    {%- endcomment -%}
-    <div class="tv-banner__illustration" aria-hidden="true">
-      <img
-        src="{{ 'tissovision-banner-illustration.svg' | asset_url }}"
-        alt=""
-        class="tv-banner__illustration-img"
-        loading="eager"
-        fetchpriority="high"
-        width="780"
-        height="560"
-      >
-    </div>
-
   </div>
 
-  {%- comment -%}
-    MARQUEE STRIP
-    CSS animation (tv-marquee keyframe) scrolls the duplicated text.
-    prefers-reduced-motion: animation stops, text remains visible and centered.
-    Visually-hidden <p> provides accessible static text for screen readers.
-  {%- endcomment -%}
+  {%- comment -%} ══════════════════════════════════════════════
+    BOTTOM STRIP
+    Desktop: scrolling marquee with long text
+    Mobile: static centered shorter text
+    Two separate schema settings — exact Figma values
+  ══════════════════════════════════════════════ {%- endcomment -%}
+
+  {%- comment -%} Desktop marquee {%- endcomment -%}
   {%- if marquee_text != blank -%}
-    <div class="tv-banner__marquee-wrap">
+    <div class="tv-banner__strip tv-banner__strip--desktop">
       <div class="tv-banner__marquee-track" aria-hidden="true">
         {%- comment -%}
-          12 repetitions ensures seamless loop at all viewport widths.
-          The CSS animates translateX(0) → translateX(-50%) on a width:max-content track,
-          which works because we render exactly 2× the content (6 + 6 = 12 items,
-          but the animation moves exactly half the track width).
+          12 repetitions — animation moves -50% so 6 visible + 6 looping.
+          Seamless at all viewport widths.
         {%- endcomment -%}
         {%- for i in (1..12) -%}
           <span class="tv-banner__marquee-item">{{- marquee_text | escape -}}</span>
-          {%- unless forloop.last -%}
-            <span class="tv-banner__marquee-sep" aria-hidden="true">&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-          {%- endunless -%}
+          <span class="tv-banner__marquee-sep" aria-hidden="true">&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;</span>
         {%- endfor -%}
       </div>
       <p class="visually-hidden">{{- marquee_text | escape -}}</p>
+    </div>
+  {%- endif -%}
+
+  {%- comment -%} Mobile static strip {%- endcomment -%}
+  {%- if mobile_strip_text != blank -%}
+    <div class="tv-banner__strip tv-banner__strip--mobile">
+      <p class="tv-banner__strip-text">{{- mobile_strip_text | escape -}}</p>
     </div>
   {%- endif -%}
 
@@ -196,13 +240,13 @@
     {
       "type": "text",
       "id": "brand_text",
-      "label": "Brand name (logo alt text)",
+      "label": "Brand name",
       "default": "TISSO VISON"
     },
     {
       "type": "text",
       "id": "announcement_text",
-      "label": "Center announcement text",
+      "label": "Announcement text (desktop center)",
       "default": "Find the ideal gift for your loved ones."
     },
     {
@@ -223,7 +267,7 @@
     {
       "type": "text",
       "id": "heading",
-      "label": "Main heading",
+      "label": "Heading",
       "default": "The Gift Guide"
     },
     {
@@ -245,13 +289,19 @@
     },
     {
       "type": "header",
-      "content": "Marquee Strip"
+      "content": "Bottom Strip"
     },
     {
       "type": "text",
       "id": "marquee_text",
-      "label": "Scrolling text",
+      "label": "Desktop scrolling text",
       "default": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL"
+    },
+    {
+      "type": "text",
+      "id": "mobile_strip_text",
+      "label": "Mobile static text",
+      "default": "SUSTAINABLE, ETHICALLY MADE ACTIVEWEAR"
     }
   ],
   "presets": [
