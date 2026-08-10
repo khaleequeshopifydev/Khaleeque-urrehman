@@ -15,12 +15,16 @@
  * Breakpoint: 749px/750px — matches Horizon theme convention.
  * Naming: BEM (.tv-banner__element--modifier).
  * No !important used.
+ * 
+ * RESPONSIVE IMPLEMENTATION:
+ * Uses clamp() for fluid scaling — smooth transitions at all viewport widths.
+ * No fixed breakpoint jumps for typography and spacing.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 /* ============================================================
    DESIGN TOKENS — scoped to .tv-banner
-   All Figma exact values
+   Responsive units using clamp() for fluid scaling
 ============================================================ */
 .tv-banner {
   /* Font */
@@ -39,16 +43,40 @@
   --tv-color-strip-bg:          #F5F5F5;
   --tv-color-strip-border:      #E0E0E0;
 
-  /* Topbar */
-  --tv-topbar-height-desktop:   52px;
-  --tv-topbar-height-mobile:    52px;
+  /* Typography — fluid scaling with clamp() */
+  /* Heading: 30px mobile → 70px desktop, smooth interpolation */
+  --tv-heading-size:            clamp(30px, 4vw + 1rem, 70px);
+  
+  /* Description: 16px mobile → 20px desktop */
+  --tv-description-size:        clamp(16px, 1.2vw + 0.5rem, 20px);
+  
+  /* Topbar/button/marquee text: 14px mobile → 16px desktop */
+  --tv-text-size:               clamp(14px, 1vw + 0.5rem, 16px);
 
-  /* Hero */
-  --tv-hero-height-desktop:     560px;
-  --tv-hero-height-mobile:      auto;
+  /* Layout dimensions — fluid with constraints */
+  /* Topbar height: 48px mobile → 56px desktop */
+  --tv-topbar-height:           clamp(48px, 5vh, 56px);
+  
+  /* Hero height: keep fixed px for SVG illustration consistency */
+  --tv-hero-height:             600px;
+  
+  /* Content panel width: 320px mobile → 480px desktop */
+  --tv-content-width:           clamp(320px, 32vw, 480px);
 
-  /* Content panel width on desktop */
-  --tv-content-width:           380px;
+  /* Padding — fluid spacing that scales smoothly */
+  /* Horizontal padding: 16px mobile → 64px desktop */
+  --tv-padding-x:               clamp(16px, 3vw, 64px);
+  
+  /* Content padding X: 24px mobile → 64px desktop */
+  --tv-content-padding-x:       clamp(24px, 3vw, 64px);
+  
+  /* Content padding Y: 24px mobile → 56px desktop */
+  --tv-content-padding-y:       clamp(24px, 3vw, 56px);
+
+  /* Gaps — fluid spacing for elements */
+  --tv-gap-small:               clamp(8px, 0.8vw, 16px);
+  --tv-gap-medium:              clamp(16px, 1.5vw, 24px);
+  --tv-gap-large:               clamp(24px, 2.5vw, 36px);
 
   /* Transitions */
   --tv-ease:                    0.18s ease;
@@ -87,9 +115,9 @@
 .tv-banner__topbar-inner {
   display: flex;
   align-items: center;
-  height: var(--tv-topbar-height-desktop);
-  padding-inline: 40px;
-  gap: 16px;
+  height: var(--tv-topbar-height);
+  padding-inline: var(--tv-padding-x);
+  gap: var(--tv-gap-medium);
   position: relative;
 }
 
@@ -113,11 +141,10 @@
 
 /* ── Announcement text (desktop center) ── */
 .tv-banner__announcement--desktop {
-  /* Exact Figma values */
   font-family: var(--tv-font);
   font-weight: 400;
-  font-size: 16px;
-  line-height: 13.42px;
+  font-size: var(--tv-text-size);
+  line-height: 1.2;
   letter-spacing: 0px;
   text-align: center;
   color: var(--tv-color-text);
@@ -133,18 +160,17 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  /* Exact Figma values */
   background-color: var(--tv-color-choose-gift-bg);
   color: var(--tv-color-choose-gift-text);
   font-family: var(--tv-font);
   font-weight: 400;
-  font-size: 16px;
-  line-height: 20.48px;
+  font-size: var(--tv-text-size);
+  line-height: 1.28;
   letter-spacing: 0px;
   text-align: center;
   text-transform: uppercase;
   text-decoration: none;
-  padding: 10px 18px;
+  padding: clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px);
   border-radius: 0;
   flex-shrink: 0;
   white-space: nowrap;
@@ -162,100 +188,118 @@
 
 /* ============================================================
    HERO AREA
-   The illustration is position:absolute filling the full hero.
-   The content panel sits on top, bottom-left, with white bg.
-   On desktop: illustration bleeds top (watch cut = intentional Figma design)
+   Layout per Figma:
+   • Illustration fills ENTIRE hero background (position: absolute)
+   • Illustration appears TWICE:
+     1. Top portion — above content (watch visible, intentionally cut at top)
+     2. Right side — beside content (continues on right)
+   • Content panel: bottom-left with white background
+   • Content has left margin from page edge (not flush left)
+   • White bg ONLY behind content text, not full height
 ============================================================ */
 .tv-banner__hero {
   position: relative;
   width: 100%;
-  height: var(--tv-hero-height-desktop);
+  height: var(--tv-hero-height);
   background-color: var(--tv-color-hero-bg);
-  overflow: hidden;
+  overflow: visible; /* Allow watch to bleed top if needed */
 }
 
-/* ── Illustration fills the entire hero ── */
+/* ── Illustration fills the entire hero background ── */
 .tv-banner__illustration {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   z-index: 0;
+  /* Illustration extends to all edges */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .tv-banner__illustration-img {
   width: 100%;
   height: 100%;
   /*
-   * cover: fills the full hero area.
-   * The watch at the top is intentionally cut — matches Figma.
-   * object-position: right top — illustration anchors to right side
-   * so the left content area stays clear for text
+   * cover: fills entire hero area
+   * object-position: right center — illustration anchors right
+   * This makes illustration appear:
+   *   - Above content (top portion with watch)
+   *   - Beside content (right side)
+   * Watch at top is intentionally cut — matches Figma design
    */
   object-fit: cover;
-  object-position: right top;
+  object-position: right center;
   display: block;
 }
 
-/* ── Content panel — overlaid bottom-left ── */
+/* ── Content panel — positioned bottom-left with margin from edge ── */
 .tv-banner__content {
   position: absolute;
   bottom: 0;
-  left: 0;
+  /* Left margin from page edge — matches Figma spacing */
+  left: var(--tv-padding-x);
+  /* Content width from tokens */
   width: var(--tv-content-width);
-  /* White background only behind the text — illustration shows right+top */
+  /* White background ONLY behind text block */
   background-color: var(--tv-color-hero-bg);
-  padding: 32px 40px 48px 40px;
+  padding: var(--tv-content-padding-y) var(--tv-content-padding-x);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   z-index: 1;
 }
 
-/* ── Heading — exact Figma: Jost 500, 70px, 100% line-height ── */
+/* ── Heading — fluid with clamp() ── */
 .tv-banner__heading {
   font-family: var(--tv-font);
   font-weight: 500;
-  font-size: 70px;
-  line-height: 100%;
+  font-size: var(--tv-heading-size);
+  line-height: 1;
   letter-spacing: 0px;
   color: var(--tv-color-text);
-  margin: 0 0 24px 0;
+  margin: 0 0 var(--tv-gap-medium) 0;
 }
 
-/* ── Description — exact Figma: Jost 400, 20px, 140% line-height ── */
+/* ── Description — fluid with clamp() ── */
 .tv-banner__description {
   font-family: var(--tv-font);
   font-weight: 400;
-  font-size: 20px;
-  line-height: 140%;
+  font-size: var(--tv-description-size);
+  line-height: 1.35;
   letter-spacing: 0px;
   color: var(--tv-color-text);
-  margin: 0 0 36px 0;
-  max-width: 300px;
+  margin: 0 0 var(--tv-gap-large) 0;
+  /* Description spans most of content panel width */
+  max-width: 100%;
+  width: 100%;
 }
 
-/* ── SHOP NOW button — exact Figma: Jost 400, 16px, black bg ── */
+/* ── Shop Now button — matches Figma width within content panel ── */
 .tv-banner__shop-now {
   display: inline-flex;
   align-items: center;
-  gap: 20px;
+  gap: clamp(16px, 2vw, 24px);
   background-color: var(--tv-color-shop-now-bg);
   color: var(--tv-color-shop-now-text);
   font-family: var(--tv-font);
   font-weight: 400;
-  font-size: 16px;
-  line-height: 20.48px;
+  font-size: var(--tv-text-size);
+  line-height: 1.28;
   letter-spacing: 0px;
   text-align: center;
   text-transform: uppercase;
   text-decoration: none;
-  padding: 16px 24px;
+  padding: clamp(14px, 1.5vw, 18px) clamp(20px, 2.5vw, 28px);
   border-radius: 0;
-  /* Matches Figma width — spans the content column */
+  /* Full width of content panel — button spans content column */
   width: 100%;
+  max-width: 100%;
   justify-content: space-between;
   transition: background-color var(--tv-ease);
+  box-sizing: border-box;
 }
 
 .tv-banner__shop-now:hover {
@@ -321,12 +365,12 @@
   animation: tv-banner-marquee 30s linear infinite;
 }
 
-/* Exact Figma: Jost 400, 16px, line-height 13.42px, center */
+/* Fluid marquee text size */
 .tv-banner__marquee-item {
   font-family: var(--tv-font);
   font-weight: 400;
-  font-size: 16px;
-  line-height: 13.42px;
+  font-size: var(--tv-text-size);
+  line-height: 1.2;
   letter-spacing: 0px;
   text-align: center;
   color: var(--tv-color-text);
@@ -338,7 +382,7 @@
   color: var(--tv-color-text);
   opacity: 0.35;
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: var(--tv-text-size);
 }
 
 @keyframes tv-banner-marquee {
@@ -358,11 +402,10 @@
 
 /* ── Mobile static strip text ── */
 .tv-banner__strip-text {
-  /* Exact Figma mobile: Jost 400, 14px, line-height 13.42px, center */
   font-family: var(--tv-font);
   font-weight: 400;
-  font-size: 14px;
-  line-height: 13.42px;
+  font-size: var(--tv-text-size);
+  line-height: 1.2;
   letter-spacing: 0px;
   text-align: center;
   color: var(--tv-color-text);
@@ -385,7 +428,6 @@
   /* ── Top bar: mobile layout ── */
   .tv-banner__topbar-inner {
     padding-inline: 16px;
-    height: var(--tv-topbar-height-mobile);
     /* Grid: hamburger | brand name | empty placeholder */
     display: grid;
     grid-template-columns: 44px 1fr 44px;
@@ -445,7 +487,7 @@
     position: relative;
     inset: auto;
     width: 100%;
-    height: 300px;
+    height: clamp(280px, 40vh, 360px);
     order: 2;
     z-index: 0;
   }
@@ -460,7 +502,7 @@
     position: relative;
     width: 100%;
     background-color: var(--tv-color-hero-bg);
-    padding: 32px 24px 24px 24px;
+    padding: clamp(28px, 5vw, 36px) clamp(20px, 5vw, 28px);
     align-items: center;
     text-align: center;
     order: 1;
@@ -469,22 +511,16 @@
     z-index: 1;
   }
 
-  /* Heading: exact Figma mobile — Jost 500, 30px */
+  /* Heading: mobile size from clamp() min value */
   .tv-banner__heading {
-    font-size: 30px;
-    font-weight: 500;
-    line-height: 100%;
-    margin-bottom: 16px;
     text-align: center;
+    margin-bottom: var(--tv-gap-small);
   }
 
-  /* Description: exact Figma mobile — Jost 400, 16px, 130% */
+  /* Description: mobile size from clamp() min value */
   .tv-banner__description {
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 130%;
     text-align: center;
-    max-width: 280px;
+    max-width: 90%;
     margin-bottom: 0;
   }
 
@@ -495,16 +531,13 @@
   .tv-banner__shop-now {
     position: absolute;
     /* Position relative to .tv-banner__hero */
-    bottom: 44px;
+    bottom: clamp(36px, 8vw, 52px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 2;
     width: calc(100% - 48px);
-    max-width: 320px;
+    max-width: 340px;
     justify-content: center;
-    gap: 24px;
-    padding: 16px 24px;
-    font-size: 16px;
   }
 
   /* ── Strip: hide marquee, show static text ── */
@@ -519,43 +552,12 @@
 }
 
 /* ============================================================
-   DESKTOP REFINEMENTS
+   DESKTOP REFINEMENTS — Fine-tuning at specific breakpoints
+   Note: Most sizing is now handled by clamp() tokens above
 ============================================================ */
 @media screen and (min-width: 750px) {
+  /* Ensure hero height is applied on desktop */
   .tv-banner__hero {
-    height: var(--tv-hero-height-desktop);
-  }
-}
-
-@media screen and (min-width: 1024px) {
-  .tv-banner {
-    --tv-content-width: 400px;
-    --tv-hero-height-desktop: 580px;
-  }
-}
-
-@media screen and (min-width: 1280px) {
-  .tv-banner {
-    --tv-hero-height-desktop: 600px;
-  }
-
-  .tv-banner__topbar-inner {
-    padding-inline: 56px;
-  }
-
-  .tv-banner__content {
-    padding: 36px 56px 56px 56px;
-    width: 420px;
-  }
-}
-
-@media screen and (min-width: 1440px) {
-  .tv-banner__topbar-inner {
-    padding-inline: 64px;
-  }
-
-  .tv-banner__content {
-    padding-inline: 64px;
-    width: 440px;
+    height: var(--tv-hero-height);
   }
 }
