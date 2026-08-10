@@ -1,0 +1,446 @@
+/*
+ * Tisso Vision Banner — Section Stylesheet
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Loaded only on pages that include the tissovision-banner section.
+ * Fonts: Jost (all UI/body text), Lustria (heading only) — Google Fonts.
+ * Breakpoint convention: 750px / 749px — matches Horizon theme.
+ * Naming: BEM (.tv-banner__element--modifier) — matches Horizon convention.
+ * CSS custom properties scoped to .tv-banner to avoid global bleed.
+ * No !important used anywhere.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Lustria&display=swap');
+
+/* ============================================================
+   DESIGN TOKENS — scoped to the banner section
+   These mirror the Figma color/size values observed in the
+   design reference screenshots.
+============================================================ */
+.tv-banner {
+  /* Fonts */
+  --tv-font-jost:    'Jost', sans-serif;
+  --tv-font-lustria: 'Lustria', serif;
+
+  /* Colors */
+  --tv-color-bg:                #ffffff;
+  --tv-color-topbar-bg:         #f5f5f3;
+  --tv-color-topbar-border:     #e8e8e6;
+  --tv-color-text:              #000000;
+  --tv-color-choose-gift-bg:    #f0e040;
+  --tv-color-choose-gift-text:  #000000;
+  --tv-color-shop-now-bg:       #000000;
+  --tv-color-shop-now-text:     #ffffff;
+  --tv-color-marquee-border:    #e0e0e0;
+  --tv-color-marquee-bg:        #ffffff;
+  --tv-color-marquee-text:      #000000;
+
+  /* Layout */
+  --tv-topbar-height:     52px;
+  --tv-hero-min-height:   520px;
+  --tv-content-width:     clamp(280px, 32%, 420px);
+  --tv-page-padding:      40px;
+
+  /* Animation */
+  --tv-transition-speed:  0.18s;
+  --tv-marquee-duration:  32s;
+}
+
+/* ============================================================
+   SECTION WRAPPER
+============================================================ */
+.tv-banner {
+  background-color: var(--tv-color-bg);
+  font-family: var(--tv-font-jost);
+  color: var(--tv-color-text);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  /* Escape Dawn's section grid so the banner spans full width */
+  margin-inline: 0;
+}
+
+/* Dawn wraps sections in a grid — override so our content isn't constrained */
+.tissovision-banner-section .tv-banner {
+  grid-column: 1 / -1;
+}
+
+/* ============================================================
+   TOP BAR
+   Desktop: logo | announcement | CHOOSE GIFT button
+   Mobile: hidden — Dawn's header handles navigation
+============================================================ */
+.tv-banner__topbar {
+  background-color: var(--tv-color-topbar-bg);
+  border-bottom: 1px solid var(--tv-color-topbar-border);
+  height: var(--tv-topbar-height);
+  display: flex;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.tv-banner__topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-inline: var(--tv-page-padding);
+  gap: 20px;
+}
+
+/* Brand logo */
+.tv-banner__brand {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.tv-banner__brand-img {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+/* Center announcement */
+.tv-banner__announcement {
+  font-family: var(--tv-font-jost);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--tv-color-text);
+  margin: 0;
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CHOOSE GIFT button — yellow, sharp corners */
+.tv-banner__choose-gift {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background-color: var(--tv-color-choose-gift-bg);
+  color: var(--tv-color-choose-gift-text);
+  font-family: var(--tv-font-jost);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border-radius: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  /* Smooth hover — CSS transition, no JS */
+  transition: background-color var(--tv-transition-speed) ease,
+              color var(--tv-transition-speed) ease;
+}
+
+.tv-banner__choose-gift:hover {
+  background-color: #e8d800;
+}
+
+.tv-banner__choose-gift:focus-visible {
+  outline: 2px solid var(--tv-color-text);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   HERO AREA
+   Desktop: side-by-side flex row
+   Mobile: stacked column (content top, illustration bottom)
+============================================================ */
+.tv-banner__hero {
+  display: flex;
+  flex-direction: row;
+  min-height: var(--tv-hero-min-height);
+  position: relative;
+  background-color: var(--tv-color-bg);
+  overflow: hidden;
+  flex: 1;
+}
+
+/* ── Content column ── */
+.tv-banner__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 48px var(--tv-page-padding) 56px var(--tv-page-padding);
+  width: var(--tv-content-width);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  background-color: var(--tv-color-bg);
+}
+
+/* Heading — Lustria serif, large */
+.tv-banner__heading {
+  font-family: var(--tv-font-lustria);
+  font-size: clamp(36px, 3.5vw, 56px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--tv-color-text);
+  margin: 0 0 20px 0;
+}
+
+/* Description body text */
+.tv-banner__description {
+  font-family: var(--tv-font-jost);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--tv-color-text);
+  margin: 0 0 36px 0;
+  max-width: 300px;
+}
+
+/* SHOP NOW button — black, full-width of content column, arrow right */
+.tv-banner__shop-now {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background-color: var(--tv-color-shop-now-bg);
+  color: var(--tv-color-shop-now-text);
+  font-family: var(--tv-font-jost);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+  padding: 16px 24px;
+  border-radius: 0;
+  /* Matches the Figma: button spans the left column width */
+  width: 100%;
+  max-width: 240px;
+  /* Smooth hover */
+  transition: background-color var(--tv-transition-speed) ease,
+              color var(--tv-transition-speed) ease;
+}
+
+.tv-banner__shop-now:hover {
+  background-color: #222222;
+}
+
+.tv-banner__shop-now:focus-visible {
+  outline: 2px solid var(--tv-color-choose-gift-bg);
+  outline-offset: 2px;
+}
+
+/* Arrow/icon wrapper inside buttons */
+.tv-banner__btn-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.tv-banner__arrow-img {
+  width: 20px;
+  height: auto;
+  display: block;
+}
+
+/* Invert arrow color when on dark (black) background */
+.tv-banner__arrow-img--inverted {
+  filter: invert(1);
+}
+
+/* ── Illustration column ── */
+.tv-banner__illustration {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: var(--tv-hero-min-height);
+}
+
+.tv-banner__illustration-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* cover: fills the column; line art looks correct at any aspect ratio */
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+/* ============================================================
+   MARQUEE STRIP
+   Seamless CSS scroll animation.
+   The track is rendered at max-content width (12 repetitions).
+   Animation moves exactly -50% (6 repetitions worth), which
+   creates a perfect seamless loop.
+============================================================ */
+.tv-banner__marquee-wrap {
+  border-top: 1px solid var(--tv-color-marquee-border);
+  background-color: var(--tv-color-marquee-bg);
+  overflow: hidden;
+  padding-block: 11px;
+  flex-shrink: 0;
+}
+
+.tv-banner__marquee-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: tv-banner-marquee var(--tv-marquee-duration) linear infinite;
+}
+
+.tv-banner__marquee-item {
+  font-family: var(--tv-font-jost);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--tv-color-marquee-text);
+  white-space: nowrap;
+  padding-inline: 8px;
+}
+
+.tv-banner__marquee-sep {
+  font-size: 10px;
+  color: var(--tv-color-marquee-text);
+  opacity: 0.35;
+  flex-shrink: 0;
+}
+
+@keyframes tv-banner-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Stop animation for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tv-banner__marquee-track {
+    animation: none;
+    /* Show text statically, centered */
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* ============================================================
+   MOBILE LAYOUT  ≤ 749px
+   Intentionally different from desktop — per Figma mobile reference:
+   • Top bar hidden (Dawn's header handles navigation)
+   • Heading + description centered at top
+   • Illustration fills the lower portion
+   • SHOP NOW button absolutely positioned over illustration
+============================================================ */
+@media screen and (max-width: 749px) {
+  .tv-banner {
+    --tv-hero-min-height: 0px;
+    --tv-page-padding: 24px;
+  }
+
+  /* Hide the topbar on mobile — Dawn's header is already above */
+  .tv-banner__topbar {
+    display: none;
+  }
+
+  /* Hero: stacked column */
+  .tv-banner__hero {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  /* Content: full width, centered, at top */
+  .tv-banner__content {
+    width: 100%;
+    padding: 36px var(--tv-page-padding) 28px var(--tv-page-padding);
+    align-items: center;
+    text-align: center;
+    justify-content: flex-start;
+    background-color: var(--tv-color-bg);
+    /* Content sits above illustration in the stacking order */
+    order: 1;
+  }
+
+  .tv-banner__heading {
+    font-size: clamp(32px, 9vw, 44px);
+    margin-bottom: 14px;
+  }
+
+  .tv-banner__description {
+    max-width: 300px;
+    text-align: center;
+    /* No bottom margin — spacing handled by illustration gap */
+    margin-bottom: 0;
+  }
+
+  /* SHOP NOW: pull out of normal flow, overlay on illustration */
+  .tv-banner__shop-now {
+    position: absolute;
+    /* Positioned relative to .tv-banner__hero which has position:relative */
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    width: calc(100% - 48px);
+    max-width: 340px;
+    justify-content: center;
+    gap: 20px;
+    padding: 18px 28px;
+  }
+
+  /* Illustration: fills bottom ~60% of the hero on mobile */
+  .tv-banner__illustration {
+    order: 2;
+    width: 100%;
+    flex: none;
+    /* Fixed height on mobile so content + illustration together feel proportional */
+    height: 340px;
+    min-height: 0;
+    position: relative;
+  }
+
+  .tv-banner__illustration-img {
+    object-position: center center;
+  }
+
+  /* Marquee: slightly smaller text on mobile */
+  .tv-banner__marquee-item {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+}
+
+/* ============================================================
+   DESKTOP REFINEMENTS  ≥ 750px
+============================================================ */
+@media screen and (min-width: 750px) {
+  .tv-banner {
+    --tv-page-padding: 40px;
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .tv-banner {
+    --tv-page-padding: 56px;
+    --tv-hero-min-height: 560px;
+  }
+
+  .tv-banner__content {
+    padding-block: 64px 72px;
+  }
+
+  .tv-banner__heading {
+    font-size: 56px;
+  }
+}
+
+@media screen and (min-width: 1440px) {
+  .tv-banner {
+    --tv-page-padding: 64px;
+  }
+}
