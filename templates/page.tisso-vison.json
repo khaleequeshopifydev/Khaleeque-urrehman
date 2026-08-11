@@ -1,0 +1,16 @@
+{
+  "sections": {
+    "tv-banner": {
+      "type": "tv-banner",
+      "settings": {}
+    },
+    "tv-grid": {
+      "type": "tv-grid",
+      "settings": {}
+    }
+  },
+  "order": [
+    "tv-banner",
+    "tv-grid"
+  ]
+}
