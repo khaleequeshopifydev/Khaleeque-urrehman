@@ -1,0 +1,394 @@
+{% comment %}
+  tv-grid.liquid
+  ─────────────────────────────────────────────────────────────
+  Tisso Vison — Product Grid Section
+  Displays 6 product cards with + button overlay
+  Desktop: 3 columns × 2 rows
+  Mobile: 2 columns × 3 rows
+  ─────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% render 'tv-fonts' %}
+
+{%- liquid
+  assign heading = section.settings.heading
+-%}
+
+<section class="tv-grid" id="tv-grid-{{ section.id }}" data-section-id="{{ section.id }}">
+  
+  {%- comment -%} Section Heading {%- endcomment -%}
+  {%- if heading != blank -%}
+    <h2 class="tv-grid__heading">{{ heading }}</h2>
+  {%- endif -%}
+
+  {%- comment -%} Product Grid Container {%- endcomment -%}
+  <div class="tv-grid__container">
+    
+    {%- if section.blocks.size > 0 -%}
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign product = block.settings.product
+        -%}
+        
+        {%- if product != blank -%}
+          <div 
+            class="tv-grid__item" 
+            data-product-id="{{ product.id }}"
+            data-product-handle="{{ product.handle }}"
+            {{ block.shopify_attributes }}
+          >
+            
+            {%- comment -%} Product Image {%- endcomment -%}
+            {%- if product.featured_image -%}
+              <img
+                src="{{ product.featured_image | image_url: width: 600 }}"
+                srcset="
+                  {{ product.featured_image | image_url: width: 400 }} 400w,
+                  {{ product.featured_image | image_url: width: 600 }} 600w,
+                  {{ product.featured_image | image_url: width: 800 }} 800w
+                "
+                sizes="(min-width: 750px) calc(33.33vw - 2rem), calc(50vw - 1.5rem)"
+                alt="{{ product.featured_image.alt | escape }}"
+                class="tv-grid__image"
+                width="{{ product.featured_image.width }}"
+                height="{{ product.featured_image.height }}"
+                loading="lazy"
+              >
+            {%- else -%}
+              {%- comment -%} Fallback placeholder if no image {%- endcomment -%}
+              <div class="tv-grid__placeholder">
+                {{ 'product-1' | placeholder_svg_tag: 'tv-grid__placeholder-svg' }}
+              </div>
+            {%- endif -%}
+
+            {%- comment -%} Plus Button Overlay {%- endcomment -%}
+            <button 
+              type="button"
+              class="tv-grid__plus-btn"
+              aria-label="View {{ product.title | escape }}"
+              data-product-handle="{{ product.handle }}"
+            >
+              <img
+                src="{{ 'tv-icon-plus.svg' | asset_url }}"
+                alt=""
+                width="24"
+                height="24"
+                class="tv-grid__plus-icon"
+              >
+            </button>
+
+          </div>
+        {%- else -%}
+          {%- comment -%} Empty state - no product selected {%- endcomment -%}
+          <div class="tv-grid__item tv-grid__item--empty" {{ block.shopify_attributes }}>
+            <div class="tv-grid__placeholder">
+              {{ 'product-1' | placeholder_svg_tag: 'tv-grid__placeholder-svg' }}
+              <p class="tv-grid__empty-text">Select a product</p>
+            </div>
+          </div>
+        {%- endif -%}
+
+      {%- endfor -%}
+    {%- else -%}
+      {%- comment -%} No blocks added yet - show placeholder grid {%- endcomment -%}
+      {%- for i in (1..6) -%}
+        <div class="tv-grid__item tv-grid__item--empty">
+          <div class="tv-grid__placeholder">
+            {{ 'product-1' | placeholder_svg_tag: 'tv-grid__placeholder-svg' }}
+          </div>
+        </div>
+      {%- endfor -%}
+    {%- endif -%}
+
+  </div>
+
+</section>
+
+{% stylesheet %}
+/* ─────────────────────────────────────────────────────────────
+   TV GRID — Design tokens (CSS custom properties)
+   All values derived from Figma specs.
+   Scoped to .tv-grid to avoid collision with Horizon styles.
+   ───────────────────────────────────────────────────────────── */
+.tv-grid {
+  /* Typography */
+  --tv-font-primary: 'Jost', sans-serif;
+
+  /* Grid layout */
+  --tv-grid-cols-desktop:      3;
+  --tv-grid-cols-mobile:       2;
+  --tv-grid-gap-desktop:       1.25rem;  /* 20px */
+  --tv-grid-gap-mobile:        1rem;     /* 16px */
+  
+  /* Section spacing */
+  --tv-grid-section-pad-y:     4rem;     /* 64px top/bottom */
+  --tv-grid-section-pad-x:     3.125rem; /* 50px left/right - matches banner */
+  --tv-grid-heading-margin:    2.5rem;   /* 40px below heading */
+
+  /* Heading typography */
+  --tv-grid-heading-size:      2.5rem;   /* 40px desktop */
+  --tv-grid-heading-weight:    400;
+  --tv-grid-heading-lh:        1.2;
+  --tv-grid-heading-color:     #000000;
+
+  /* Card aspect ratio and sizing */
+  --tv-grid-card-aspect:       3 / 4;    /* portrait ratio */
+
+  /* Plus button */
+  --tv-grid-plus-size:         2.75rem;  /* 44px - touch friendly */
+  --tv-grid-plus-offset:       0.75rem;  /* 12px from edges */
+  --tv-grid-plus-bg:           #FFFFFF;
+  --tv-grid-plus-icon-color:   #000000;
+
+  font-family: var(--tv-font-primary);
+  box-sizing: border-box;
+
+  /* Section spacing */
+  padding: var(--tv-grid-section-pad-y) var(--tv-grid-section-pad-x);
+  background-color: #FFFFFF;
+}
+
+/* Scoped box-sizing reset */
+.tv-grid *,
+.tv-grid *::before,
+.tv-grid *::after {
+  box-sizing: inherit;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SECTION HEADING
+   ───────────────────────────────────────────────────────────── */
+.tv-grid__heading {
+  font-family: var(--tv-font-primary);
+  font-size: var(--tv-grid-heading-size);
+  font-weight: var(--tv-grid-heading-weight);
+  line-height: var(--tv-grid-heading-lh);
+  letter-spacing: 0;
+  color: var(--tv-grid-heading-color);
+  margin: 0 0 var(--tv-grid-heading-margin) 0;
+  text-align: left;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GRID CONTAINER
+   CSS Grid with 3 columns desktop, 2 columns mobile
+   ───────────────────────────────────────────────────────────── */
+.tv-grid__container {
+  display: grid;
+  grid-template-columns: repeat(var(--tv-grid-cols-desktop), 1fr);
+  gap: var(--tv-grid-gap-desktop);
+  width: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GRID ITEM (Product Card)
+   ───────────────────────────────────────────────────────────── */
+.tv-grid__item {
+  position: relative;
+  aspect-ratio: var(--tv-grid-card-aspect);
+  overflow: hidden;
+  background-color: #F5F5F5; /* fallback bg while image loads */
+  border-radius: 0; /* sharp corners per Figma */
+}
+
+/* Ensure image fills card completely */
+.tv-grid__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+/* Subtle zoom on hover - polish detail */
+.tv-grid__item:hover .tv-grid__image {
+  transform: scale(1.05);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PLUS BUTTON OVERLAY
+   ───────────────────────────────────────────────────────────── */
+.tv-grid__plus-btn {
+  position: absolute;
+  top: var(--tv-grid-plus-offset);
+  right: var(--tv-grid-plus-offset);
+  width: var(--tv-grid-plus-size);
+  height: var(--tv-grid-plus-size);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  background-color: var(--tv-grid-plus-bg);
+  border: none;
+  border-radius: 50%; /* circular */
+  cursor: pointer;
+  
+  /* Subtle shadow for depth */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 2;
+}
+
+.tv-grid__plus-icon {
+  display: block;
+  width: 1.5rem; /* 24px */
+  height: 1.5rem;
+}
+
+/* Hover state - scale and lift */
+.tv-grid__plus-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Active/pressed state */
+.tv-grid__plus-btn:active {
+  transform: scale(1.05);
+}
+
+/* Focus state for accessibility */
+.tv-grid__plus-btn:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PLACEHOLDER / EMPTY STATE
+   When no product selected in customizer
+   ───────────────────────────────────────────────────────────── */
+.tv-grid__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F5F5F5;
+  padding: 1.5rem;
+}
+
+.tv-grid__placeholder-svg {
+  width: 60%;
+  height: auto;
+  opacity: 0.3;
+}
+
+.tv-grid__empty-text {
+  margin-top: 1rem;
+  font-family: var(--tv-font-primary);
+  font-size: 0.875rem;
+  color: #666666;
+  text-align: center;
+}
+
+/* Hide plus button on empty cards */
+.tv-grid__item--empty .tv-grid__plus-btn {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVE — Mobile (≤ 749px)
+   ───────────────────────────────────────────────────────────── */
+@media screen and (max-width: 749px) {
+  .tv-grid {
+    padding: 2.5rem 1.5rem; /* tighter mobile padding */
+  }
+
+  /* Smaller heading on mobile */
+  .tv-grid__heading {
+    font-size: 1.75rem; /* 28px */
+    margin-bottom: 1.5rem; /* 24px */
+  }
+
+  /* 2 columns on mobile */
+  .tv-grid__container {
+    grid-template-columns: repeat(var(--tv-grid-cols-mobile), 1fr);
+    gap: var(--tv-grid-gap-mobile);
+  }
+
+  /* Slightly smaller plus button on mobile */
+  .tv-grid__plus-btn {
+    width: 2.5rem; /* 40px */
+    height: 2.5rem;
+  }
+
+  .tv-grid__plus-icon {
+    width: 1.25rem; /* 20px */
+    height: 1.25rem;
+  }
+}
+
+/* Honour user reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .tv-grid__image,
+  .tv-grid__plus-btn {
+    transition: none;
+  }
+
+  .tv-grid__item:hover .tv-grid__image {
+    transform: none;
+  }
+
+  .tv-grid__plus-btn:hover {
+    transform: none;
+  }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "TV Grid",
+  "tag": "section",
+  "class": "tv-grid-section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Section heading",
+      "default": "Tisso vison in the wild"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Product",
+      "limit": 6,
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Select product"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "TV Grid",
+      "blocks": [
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        },
+        {
+          "type": "product"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
