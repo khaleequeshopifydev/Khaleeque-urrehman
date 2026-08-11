@@ -254,8 +254,30 @@
    RESPONSIVE — Mobile (≤ 749px)
    ───────────────────────────────────────────────────────────── */
 @media screen and (max-width: 749px) {
-  /* Topbar hidden — Horizon header handles mobile navigation */
+  /* Topbar — simplified layout: hamburger left, logo center, announcement + button hidden */
   .tv-banner__topbar {
+    justify-content: center;
+    padding: var(--tv-topbar-pad-y) 1.5rem;
+  }
+
+  /* Hamburger icon placeholder — left absolute position */
+  .tv-banner__topbar::before {
+    content: '☰';
+    position: absolute;
+    left: 1.5rem;
+    font-size: 1.5rem;
+    color: #000000;
+    line-height: 1;
+  }
+
+  /* Logo centered */
+  .tv-banner__logo-link {
+    order: 0;
+  }
+
+  /* Hide announcement and CTA button on mobile */
+  .tv-banner__announcement,
+  .tv-banner__cta {
     display: none;
   }
 }
