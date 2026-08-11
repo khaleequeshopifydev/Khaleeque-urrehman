@@ -1,0 +1,346 @@
+{% comment %}
+  tv-banner.liquid
+  ─────────────────────────────────────────────────────────────
+  Tisso Vison — Banner Section
+  Parts:
+    1. Topbar   — logo | announcement | CTA button  ✓
+    2. Hero     — coming next
+    3. Marquee  — coming next
+  ─────────────────────────────────────────────────────────────
+{% endcomment %}
+
+{% render 'tv-fonts' %}
+
+{%- liquid
+  assign logo_img     = section.settings.logo_image
+  assign announcement = section.settings.announcement_text
+  assign cta_label    = section.settings.cta_label
+  assign cta_link     = section.settings.cta_link
+-%}
+
+<div class="tv-banner" data-section-id="{{ section.id }}">
+
+  {%- comment -%} ── 1. TOPBAR ─────────────────────────────── {%- endcomment -%}
+  <div class="tv-banner__topbar">
+
+    {%- comment -%} Left: Logo {%- endcomment -%}
+    <a href="{{ routes.root_url }}" class="tv-banner__logo-link" aria-label="{{ shop.name }}">
+      {%- if logo_img != blank -%}
+        <img
+          src="{{ logo_img | image_url: width: 200 }}"
+          alt="{{ shop.name }}"
+          class="tv-banner__logo"
+          width="152"
+          height="19"
+          loading="eager"
+        >
+      {%- else -%}
+        <img
+          src="{{ 'tisso-vison-logo.svg' | asset_url }}"
+          alt="{{ shop.name }}"
+          class="tv-banner__logo"
+          width="152"
+          height="19"
+          loading="eager"
+        >
+      {%- endif -%}
+    </a>
+
+    {%- comment -%} Center: Announcement text {%- endcomment -%}
+    {%- if announcement != blank -%}
+      <p class="tv-banner__announcement">{{ announcement }}</p>
+    {%- endif -%}
+
+    {%- comment -%} Right: CTA button {%- endcomment -%}
+    {%- if cta_label != blank -%}
+      <a
+        href="{{ cta_link | default: '#' }}"
+        class="tv-btn tv-btn--yellow tv-banner__cta"
+      >
+        <span class="tv-btn__text">{{ cta_label }}</span>
+        <span class="tv-btn__arrow" aria-hidden="true">
+          <img
+            src="{{ 'tv-icon-arrow.svg' | asset_url }}"
+            alt=""
+            width="26"
+            height="12"
+            class="tv-btn__arrow-icon tv-btn__arrow-icon--dark"
+          >
+        </span>
+      </a>
+    {%- endif -%}
+
+  </div>
+  {%- comment -%} ── END TOPBAR ───────────────────────────────── {%- endcomment -%}
+
+</div>
+
+{% stylesheet %}
+/* ─────────────────────────────────────────────────────────────
+   TV BANNER — Design tokens (CSS custom properties)
+   All values derived from Figma specs.
+   Scoped to .tv-banner to avoid collision with Horizon styles.
+   ───────────────────────────────────────────────────────────── */
+.tv-banner {
+  /* Typography */
+  --tv-font-primary:   'Jost', sans-serif;
+  --tv-font-secondary: 'Lustria', serif; /* marquee only */
+
+  /* Topbar — from Figma */
+  --tv-topbar-bg:        #F5F5F5;
+  --tv-topbar-height:    4rem;         /* 64px */
+  --tv-topbar-pad-y:     0.625rem;     /* 10px */
+  --tv-topbar-pad-x:     3.125rem;     /* 50px */
+
+  /* Announcement text — from Figma */
+  --tv-announce-size:    1rem;         /* 16px */
+  --tv-announce-weight:  400;
+  --tv-announce-color:   #000000;
+  --tv-announce-lh:      1.5;          /* normalised from 13.42px raw — use relative unit */
+
+  /* Shared button tokens */
+  --tv-btn-font-size:    1rem;         /* 16px */
+  --tv-btn-font-weight:  400;
+  --tv-btn-gap:          0.625rem;     /* space between label and arrow */
+  --tv-btn-arrow-shift:  0.375rem;     /* 6px — arrow translateX on hover */
+
+  /* Button: yellow (CHOOSE GIFT) — from Figma */
+  --tv-btn-yellow-bg:    #FFF544;
+  --tv-btn-yellow-color: #000000;
+  --tv-btn-yellow-pad:   0.625rem 1.5rem; /* balanced padding, height ~= 64px row */
+
+  /* Button: dark (SHOP NOW / ADD TO CART) */
+  --tv-btn-dark-bg:      #000000;
+  --tv-btn-dark-color:   #ffffff;
+  --tv-btn-dark-pad:     0.875rem 1.75rem;
+
+  font-family: var(--tv-font-primary);
+  box-sizing: border-box;
+}
+
+/* Scoped box-sizing reset — does not affect rest of theme */
+.tv-banner *,
+.tv-banner *::before,
+.tv-banner *::after {
+  box-sizing: inherit;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   1. TOPBAR
+   Layout: flex row, space-between
+   Left: logo | Center: announcement | Right: CTA button
+   ───────────────────────────────────────────────────────────── */
+.tv-banner__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--tv-topbar-height);
+  padding: var(--tv-topbar-pad-y) var(--tv-topbar-pad-x);
+  background-color: var(--tv-topbar-bg);
+}
+
+/* Logo — left, no shrink */
+.tv-banner__logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.tv-banner__logo {
+  display: block;
+  height: 1.1875rem; /* 19px — exact SVG viewBox height */
+  width: auto;
+}
+
+/* Announcement — center column, grows to fill gap between logo and button */
+.tv-banner__announcement {
+  flex: 1;
+  padding: 0 1.5rem;
+  font-family: var(--tv-font-primary);
+  font-size: var(--tv-announce-size);
+  font-weight: var(--tv-announce-weight);
+  line-height: var(--tv-announce-lh);
+  letter-spacing: 0;
+  color: var(--tv-announce-color);
+  text-align: center;
+  margin: 0;
+  /* Prevent overflow on very small viewports */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SHARED BUTTON BASE — .tv-btn
+   Reused in: topbar (yellow), hero (dark), popup ADD TO CART (dark)
+   ───────────────────────────────────────────────────────────── */
+.tv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tv-btn-gap);
+  font-family: var(--tv-font-primary);
+  font-size: var(--tv-btn-font-size);
+  font-weight: var(--tv-btn-font-weight);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  transition: background-color 0.25s ease;
+}
+
+.tv-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Yellow variant */
+.tv-btn--yellow {
+  background-color: var(--tv-btn-yellow-bg);
+  color: var(--tv-btn-yellow-color);
+  padding: var(--tv-btn-yellow-pad);
+}
+
+.tv-btn--yellow:hover,
+.tv-btn--yellow:focus-visible {
+  background-color: #ece200;
+}
+
+/* Dark variant */
+.tv-btn--dark {
+  background-color: var(--tv-btn-dark-bg);
+  color: var(--tv-btn-dark-color);
+  padding: var(--tv-btn-dark-pad);
+}
+
+.tv-btn--dark:hover,
+.tv-btn--dark:focus-visible {
+  background-color: #1a1a1a;
+}
+
+/* Arrow wrapper */
+.tv-btn__arrow {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Arrow icon — smooth slide on hover */
+.tv-btn__arrow-icon {
+  display: block;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+/* Invert arrow colour for dark buttons (black SVG → white) */
+.tv-btn__arrow-icon--light {
+  filter: invert(1);
+}
+
+.tv-btn:hover .tv-btn__arrow-icon,
+.tv-btn:focus-visible .tv-btn__arrow-icon {
+  transform: translateX(var(--tv-btn-arrow-shift));
+}
+
+/* Honour user reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .tv-btn__arrow-icon {
+    transition: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESPONSIVE — Mobile (≤ 749px)
+   ───────────────────────────────────────────────────────────── */
+@media screen and (max-width: 749px) {
+  /* Topbar hidden — Horizon header handles mobile navigation */
+  .tv-banner__topbar {
+    display: none;
+  }
+}
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "TV Banner",
+  "tag": "section",
+  "class": "tv-banner-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Topbar"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_image",
+      "label": "Logo image",
+      "info": "Leave empty to use the default Tisso Vison SVG logo"
+    },
+    {
+      "type": "text",
+      "id": "announcement_text",
+      "label": "Announcement text",
+      "default": "Find the ideal gift for your loved ones."
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "CTA button label",
+      "default": "CHOOSE GIFT"
+    },
+    {
+      "type": "url",
+      "id": "cta_link",
+      "label": "CTA button link"
+    }
+  ],
+  "presets": [
+    {
+      "name": "TV Banner"
+    }
+  ]
+}
+{% endschema %}
+
+{% schema %}
+{
+  "name": "TV Banner",
+  "tag": "section",
+  "class": "tv-banner-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Topbar"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_image",
+      "label": "Logo image",
+      "info": "Leave empty to use the default Tisso Vison SVG logo"
+    },
+    {
+      "type": "text",
+      "id": "announcement_text",
+      "label": "Announcement text",
+      "default": "Find the ideal gift for your loved ones."
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "CTA button label",
+      "default": "CHOOSE GIFT"
+    },
+    {
+      "type": "url",
+      "id": "cta_link",
+      "label": "CTA button link"
+    }
+  ],
+  "presets": [
+    {
+      "name": "TV Banner"
+    }
+  ]
+}
+{% endschema %}
