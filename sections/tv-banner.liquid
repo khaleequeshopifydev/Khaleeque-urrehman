@@ -181,16 +181,17 @@
 
   /* Hero — from Figma */
   --tv-hero-bg:             #FFFFFF;
-  --tv-hero-heading-size:   clamp(2.5rem, 5vw, 4.375rem); /* 70px desktop, responsive */
+  --tv-hero-heading-size:   4.375rem;  /* 70px desktop */
   --tv-hero-heading-weight: 500;
-  --tv-hero-heading-lh:     1;         /* 100% */
+  --tv-hero-heading-lh:     1;
   --tv-hero-heading-color:  #000000;
   --tv-hero-desc-size:      1.25rem;   /* 20px desktop */
   --tv-hero-desc-weight:    400;
-  --tv-hero-desc-lh:        1.4;       /* 140% */
+  --tv-hero-desc-lh:        1.4;
   --tv-hero-desc-color:     #000000;
-  --tv-hero-content-width:  32%;       /* left content box, reduced from 36% */
-  --tv-hero-content-pad:    2rem 2.5rem 3rem; /* tighter padding */
+  --tv-hero-content-max:    40%;       /* max-width for content wrapping */
+  --tv-hero-pad-left:       3.125rem;  /* 50px left padding */
+  --tv-hero-pad-bottom:     3.125rem;  /* 50px bottom padding */
 
   /* Marquee — from Figma */
   --tv-marquee-bg:          #F5F5F5;
@@ -380,7 +381,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* changed from cover — keeps illustration properly sized */
+  object-fit: cover; /* cover to fill entire hero area on desktop */
   object-position: center;
   z-index: 0;
 }
@@ -389,23 +390,23 @@
 .tv-banner__content {
   position: relative;
   z-index: 1;
-  max-width: var(--tv-hero-content-width);
-  padding: var(--tv-hero-content-pad);
+  max-width: var(--tv-hero-content-max);
+  padding-left: var(--tv-hero-pad-left);
+  padding-bottom: 1.5rem; /* gap between content and button */
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  align-self: flex-end; /* bottom positioning */
-  margin-bottom: 0; /* tight to bottom */
+  gap: 1rem; /* gap between heading and description */
+  align-self: flex-start; /* left alignment */
+  margin-bottom: 0;
 }
 
 /* Button wrapper — desktop: separate element for flex positioning */
 .tv-banner__btn-wrapper {
   position: relative;
   z-index: 1;
-  max-width: var(--tv-hero-content-width);
-  padding: 0 2.5rem 2.5rem; /* matches content horizontal padding, tight bottom */
-  align-self: flex-end; /* bottom left alignment */
-  margin-top: -0.5rem; /* reduce gap between content and button */
+  padding-left: var(--tv-hero-pad-left);
+  padding-bottom: var(--tv-hero-pad-bottom);
+  align-self: flex-start; /* left alignment */
 }
 
 .tv-banner__heading {
@@ -516,7 +517,7 @@
   .tv-banner__illustration {
     position: relative;
     width: 100%;
-    height: 13rem; /* reduced from 16rem — more compact */
+    height: 12rem; /* reduced height for mobile */
     object-fit: contain; /* contain on mobile to show full illustration */
     object-position: center;
     order: 2; /* illustration second */
@@ -557,7 +558,7 @@
     width: 100%;
     max-width: none;
     justify-content: center;
-    padding: 0.875rem 1.5rem; /* reduced padding — was too tall */
+    padding: 0.75rem 1.5rem; /* reduced padding for mobile */
     font-size: 0.9375rem; /* slightly smaller on mobile */
   }
 
