@@ -136,10 +136,11 @@
   --tv-grid-card-aspect:       3 / 4;    /* portrait ratio */
 
   /* Plus button */
-  --tv-grid-plus-size:         2.75rem;  /* 44px - touch friendly */
-  --tv-grid-plus-offset:       0.75rem;  /* 12px from edges */
+  --tv-grid-plus-size:         2rem;      /* 32px - smaller button */
+  --tv-grid-plus-offset:       0.75rem;   /* 12px from edges */
   --tv-grid-plus-bg:           #FFFFFF;
   --tv-grid-plus-icon-color:   #000000;
+  --tv-grid-plus-icon-size:    1rem;      /* 16px - matches Figma */
 
   font-family: var(--tv-font-primary);
   box-sizing: border-box;
@@ -235,8 +236,8 @@
 
 .tv-grid__plus-icon {
   display: block;
-  width: 1.5rem; /* 24px */
-  height: 1.5rem;
+  width: var(--tv-grid-plus-icon-size); /* 16px from Figma */
+  height: var(--tv-grid-plus-icon-size);
 }
 
 /* Hover state - scale and lift */
@@ -312,13 +313,13 @@
 
   /* Slightly smaller plus button on mobile */
   .tv-grid__plus-btn {
-    width: 2.5rem; /* 40px */
-    height: 2.5rem;
+    width: 1.875rem; /* 30px on mobile */
+    height: 1.875rem;
   }
 
   .tv-grid__plus-icon {
-    width: 1.25rem; /* 20px */
-    height: 1.25rem;
+    width: 0.875rem; /* 14px on mobile */
+    height: 0.875rem;
   }
 }
 
