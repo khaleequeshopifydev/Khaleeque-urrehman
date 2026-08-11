@@ -80,6 +80,78 @@
   {%- comment -%} ── END TOPBAR ───────────────────────────────── {%- endcomment -%}
 
 
+  {%- comment -%} ── MOBILE DRAWER ────────────────────────────── {%- endcomment -%}
+  <div class="tv-drawer" id="tv-mobile-drawer">
+    
+    {%- comment -%} Overlay - dark background {%- endcomment -%}
+    <div class="tv-drawer__overlay" aria-hidden="true"></div>
+
+    {%- comment -%} Drawer panel - slides from left {%- endcomment -%}
+    <div class="tv-drawer__panel" role="dialog" aria-modal="true" aria-label="Mobile menu">
+      
+      {%- comment -%} Close button {%- endcomment -%}
+      <button
+        type="button"
+        class="tv-drawer__close"
+        aria-label="Close menu"
+      >
+        <img
+          src="{{ 'tv-icon-close.svg' | asset_url }}"
+          alt=""
+          width="24"
+          height="24"
+          class="tv-drawer__close-icon"
+        >
+      </button>
+
+      {%- comment -%} Logo {%- endcomment -%}
+      <div class="tv-drawer__logo">
+        {%- if logo_img != blank -%}
+          <img
+            src="{{ logo_img | image_url: width: 200 }}"
+            alt="{{ shop.name }}"
+            width="152"
+            height="19"
+          >
+        {%- else -%}
+          <img
+            src="{{ 'tisso-vison-logo.svg' | asset_url }}"
+            alt="{{ shop.name }}"
+            width="152"
+            height="19"
+          >
+        {%- endif -%}
+      </div>
+
+      {%- comment -%} Announcement text {%- endcomment -%}
+      {%- if announcement != blank -%}
+        <p class="tv-drawer__announcement">{{ announcement }}</p>
+      {%- endif -%}
+
+      {%- comment -%} CTA button {%- endcomment -%}
+      {%- if cta_label != blank -%}
+        <a
+          href="{{ cta_link | default: '#' }}"
+          class="tv-btn tv-btn--yellow tv-drawer__cta"
+        >
+          <span class="tv-btn__text">{{ cta_label }}</span>
+          <span class="tv-btn__arrow" aria-hidden="true">
+            <img
+              src="{{ 'tv-icon-arrow.svg' | asset_url }}"
+              alt=""
+              width="26"
+              height="12"
+              class="tv-btn__arrow-icon tv-btn__arrow-icon--dark"
+            >
+          </span>
+        </a>
+      {%- endif -%}
+
+    </div>
+  </div>
+  {%- comment -%} ── END MOBILE DRAWER ────────────────────────── {%- endcomment -%}
+
+
   {%- comment -%} ── 2. HERO ──────────────────────────────────── {%- endcomment -%}
   <div class="tv-banner__hero">
 
@@ -361,6 +433,128 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
+   MOBILE DRAWER
+   Slides from left on mobile when hamburger clicked
+   ───────────────────────────────────────────────────────────── */
+.tv-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Drawer open state */
+.tv-drawer.tv-drawer--open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Overlay - dark background */
+.tv-drawer__overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tv-drawer--open .tv-drawer__overlay {
+  opacity: 1;
+}
+
+/* Drawer panel - white container sliding from left */
+.tv-drawer__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 85%;
+  max-width: 25rem; /* 400px max */
+  background-color: #FFFFFF;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+}
+
+.tv-drawer--open .tv-drawer__panel {
+  transform: translateX(0);
+}
+
+/* Close button - top left */
+.tv-drawer__close {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+.tv-drawer__close:hover {
+  transform: scale(1.1);
+}
+
+.tv-drawer__close:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+.tv-drawer__close-icon {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Logo - centered */
+.tv-drawer__logo {
+  margin-top: 3rem; /* space for close button */
+  margin-bottom: 2rem;
+}
+
+.tv-drawer__logo img {
+  display: block;
+  height: 1.1875rem; /* 19px - matches topbar */
+  width: auto;
+}
+
+/* Announcement text - centered */
+.tv-drawer__announcement {
+  font-family: var(--tv-font-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  color: #000000;
+  margin: 0 0 2rem 0;
+  max-width: 20rem;
+}
+
+/* CTA button - centered */
+.tv-drawer__cta {
+  margin-top: auto; /* push to bottom if space available */
+}
+
+/* Hide drawer on desktop */
+@media screen and (min-width: 750px) {
+  .tv-drawer {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
    2. HERO
    Full-bleed illustration with bottom-left content overlay
    ───────────────────────────────────────────────────────────── */
@@ -486,8 +680,10 @@
   .tv-banner__topbar {
     justify-content: center;
     padding: var(--tv-topbar-pad-y) 1.5rem;
+    position: relative;
   }
 
+  /* Hamburger button - clickable */
   .tv-banner__topbar::before {
     content: '☰';
     position: absolute;
@@ -495,6 +691,9 @@
     font-size: 1.5rem;
     color: #000000;
     line-height: 1;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin: -0.5rem;
   }
 
   .tv-banner__logo-link {
@@ -658,3 +857,6 @@
   ]
 }
 {% endschema %}
+
+
+<script src="{{ 'tv-banner.js' | asset_url }}" defer></script>
