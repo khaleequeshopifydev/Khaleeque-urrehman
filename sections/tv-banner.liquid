@@ -189,8 +189,8 @@
   --tv-hero-desc-weight:    400;
   --tv-hero-desc-lh:        1.4;       /* 140% */
   --tv-hero-desc-color:     #000000;
-  --tv-hero-content-width:  36%;       /* left content box */
-  --tv-hero-content-pad:    3rem 3rem 4rem; /* top, sides, bottom */
+  --tv-hero-content-width:  32%;       /* left content box, reduced from 36% */
+  --tv-hero-content-pad:    2rem 2.5rem 3rem; /* tighter padding */
 
   /* Marquee — from Figma */
   --tv-marquee-bg:          #F5F5F5;
@@ -393,17 +393,19 @@
   padding: var(--tv-hero-content-pad);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   align-self: flex-end; /* bottom positioning */
+  margin-bottom: 0; /* tight to bottom */
 }
 
-/* Button wrapper — desktop: inline with content, mobile: separate flex child */
+/* Button wrapper — desktop: separate element for flex positioning */
 .tv-banner__btn-wrapper {
   position: relative;
   z-index: 1;
   max-width: var(--tv-hero-content-width);
-  padding: 0 3rem 4rem; /* matches content box horizontal padding */
-  align-self: flex-end; /* bottom left with content */
+  padding: 0 2.5rem 2.5rem; /* matches content horizontal padding, tight bottom */
+  align-self: flex-end; /* bottom left alignment */
+  margin-top: -0.5rem; /* reduce gap between content and button */
 }
 
 .tv-banner__heading {
@@ -411,10 +413,9 @@
   font-size: var(--tv-hero-heading-size);
   font-weight: var(--tv-hero-heading-weight);
   line-height: var(--tv-hero-heading-lh);
-  letter-spacing: 0;
+  letter-spacing: -0.02em; /* tighter letter spacing for large heading */
   color: var(--tv-hero-heading-color);
   margin: 0;
-  max-width: max-content; /* prevents wrapping */
 }
 
 .tv-banner__description {
@@ -425,7 +426,6 @@
   letter-spacing: 0;
   color: var(--tv-hero-desc-color);
   margin: 0;
-  max-width: 28rem; /* constrains description width */
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -516,43 +516,49 @@
   .tv-banner__illustration {
     position: relative;
     width: 100%;
-    height: 16rem;
-    object-fit: contain;
-    order: 2; /* illustration second — after content, before button */
-    margin: 1.5rem 0;
+    height: 13rem; /* reduced from 16rem — more compact */
+    object-fit: contain; /* contain on mobile to show full illustration */
+    object-position: center;
+    order: 2; /* illustration second */
+    margin: 1rem 0 1.5rem; /* tighter spacing */
   }
 
   .tv-banner__content {
     max-width: 100%;
     width: 100%;
-    padding: 2rem 1.5rem 0;
+    padding: 1.5rem 1.5rem 0; /* tighter top padding */
     text-align: center;
     align-items: center;
     align-self: stretch;
     order: 1; /* heading + description first */
+    gap: 0.5rem; /* tighter gap between heading and description */
+    margin-bottom: 0;
   }
 
   .tv-banner__heading {
     font-size: 1.875rem; /* 30px */
+    letter-spacing: 0;
   }
 
   .tv-banner__description {
     font-size: 1rem; /* 16px */
     line-height: 1.3; /* 130% */
-    max-width: none; /* remove desktop constraint */
   }
 
   .tv-banner__btn-wrapper {
     max-width: 100%;
-    padding: 0 1.5rem 2rem;
+    padding: 0 1.5rem 2rem; /* side padding + bottom */
     align-self: stretch;
-    order: 3; /* button last — after illustration */
+    order: 3; /* button last */
+    margin-top: 0;
   }
 
   .tv-btn.tv-banner__btn {
     width: 100%;
     max-width: none;
     justify-content: center;
+    padding: 0.875rem 1.5rem; /* reduced padding — was too tall */
+    font-size: 0.9375rem; /* slightly smaller on mobile */
   }
 
   /* Marquee — smaller font on mobile */
