@@ -126,67 +126,81 @@
 
   {%- comment -%} ══════════════════════════════════════════════
     HERO AREA
-    The illustration is one image used as the hero background.
-    It fills the entire hero container (position:absolute, cover).
-    The content column (heading + text + button) sits on top of
-    the bottom-left, with a white background behind the text only.
-    On desktop: illustration bleeds top edge (watch cut at top = intentional)
-    On mobile: content centered top, illustration below, button overlaid
+    Layout matches example HTML:
+    - TOP ROW (55% height): Illustration appears (cropped top)
+    - BOTTOM ROW (45% height): Flexbox with 2 columns
+      * LEFT: Content panel (text + button)
+      * RIGHT: Illustration continues (right side visible)
+    Desktop: Illustration visible 2 times (top + right)
+    Mobile: Stacked layout
   ══════════════════════════════════════════════ {%- endcomment -%}
   <div class="tv-banner__hero">
 
-    {%- comment -%} Illustration — fills the entire hero background {%- endcomment -%}
-    <div class="tv-banner__illustration" aria-hidden="true">
+    {%- comment -%} TOP ROW — Illustration (cropped, watch visible at top) {%- endcomment -%}
+    <div class="tv-banner__hero-top">
       <img
         src="{{ 'tissovision-banner-illustration.svg' | asset_url }}"
         alt=""
-        class="tv-banner__illustration-img"
+        class="tv-banner__hero-top-img"
         loading="eager"
         fetchpriority="high"
         width="1440"
         height="560"
+        aria-hidden="true"
       >
     </div>
 
-    {%- comment -%}
-      Content panel — positioned bottom-left on desktop
-      White background only behind the text block
-    {%- endcomment -%}
-    <div class="tv-banner__content">
-      <h1
-        class="tv-banner__heading"
-        id="tv-banner-heading-{{ section.id }}"
-      >
-        {{- heading | escape -}}
-      </h1>
+    {%- comment -%} BOTTOM ROW — Flex container (content left + illustration right) {%- endcomment -%}
+    <div class="tv-banner__hero-bottom">
 
-      {%- if description != blank -%}
-        <p class="tv-banner__description">
-          {{- description | escape -}}
-        </p>
-      {%- endif -%}
+      {%- comment -%} LEFT: Content panel {%- endcomment -%}
+      <div class="tv-banner__content">
+        <h1
+          class="tv-banner__heading"
+          id="tv-banner-heading-{{ section.id }}"
+        >
+          {{- heading | escape -}}
+        </h1>
 
-      {%- comment -%}
-        SHOP NOW — <a> navigates, not a form submit
-        On mobile: absolute positioned over illustration
-      {%- endcomment -%}
-      <a
-        href="{{ shop_now_url }}"
-        class="tv-banner__shop-now"
-        {% if shop_now_url == '#' %}aria-disabled="true"{% endif %}
-      >
-        <span>{{- shop_now_text | escape -}}</span>
-        <span class="tv-banner__btn-icon" aria-hidden="true">
-          <img
-            src="{{ 'tissovision-arrow.svg' | asset_url }}"
-            alt=""
-            class="tv-banner__arrow-img tv-banner__arrow-img--white"
-            width="20"
-            height="16"
-            loading="lazy"
-          >
-        </span>
-      </a>
+        {%- if description != blank -%}
+          <p class="tv-banner__description">
+            {{- description | escape -}}
+          </p>
+        {%- endif -%}
+
+        {%- comment -%} SHOP NOW button {%- endcomment -%}
+        <a
+          href="{{ shop_now_url }}"
+          class="tv-banner__shop-now"
+          {% if shop_now_url == '#' %}aria-disabled="true"{% endif %}
+        >
+          <span>{{- shop_now_text | escape -}}</span>
+          <span class="tv-banner__btn-icon" aria-hidden="true">
+            <img
+              src="{{ 'tissovision-arrow.svg' | asset_url }}"
+              alt=""
+              class="tv-banner__arrow-img tv-banner__arrow-img--white"
+              width="20"
+              height="16"
+              loading="lazy"
+            >
+          </span>
+        </a>
+      </div>
+
+      {%- comment -%} RIGHT: Illustration continues {%- endcomment -%}
+      <div class="tv-banner__hero-bottom-art">
+        <img
+          src="{{ 'tissovision-banner-illustration.svg' | asset_url }}"
+          alt=""
+          class="tv-banner__hero-bottom-img"
+          loading="eager"
+          width="1440"
+          height="560"
+          aria-hidden="true"
+        >
+      </div>
+
     </div>
 
   </div>
