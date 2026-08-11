@@ -1,12 +1,78 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "sections": {
     "tv-banner": {
       "type": "tv-banner",
-      "settings": {}
+      "settings": {
+        "announcement_text": "Find the ideal gift for your loved ones.",
+        "cta_label": "CHOOSE GIFT",
+        "cta_link": "",
+        "heading": "The Gift Guide",
+        "description": "Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season.",
+        "btn_label": "SHOP NOW",
+        "btn_link": "",
+        "marquee_text": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL"
+      }
     },
     "tv-grid": {
       "type": "tv-grid",
-      "settings": {}
+      "blocks": {
+        "product_rT4FVm": {
+          "type": "product",
+          "settings": {
+            "product": "black-leather-bag"
+          }
+        },
+        "product_Vda8Qj": {
+          "type": "product",
+          "settings": {
+            "product": "blue-silk-tuxedo"
+          }
+        },
+        "product_bXj9A8": {
+          "type": "product",
+          "settings": {
+            "product": "chequered-red-shirt"
+          }
+        },
+        "product_89JFLb": {
+          "type": "product",
+          "settings": {
+            "product": "classic-leather-jacket"
+          }
+        },
+        "product_44ULmJ": {
+          "type": "product",
+          "settings": {
+            "product": "classic-varsity-top"
+          }
+        },
+        "product_EDUfkM": {
+          "type": "product",
+          "settings": {
+            "product": "dark-denim-top"
+          }
+        }
+      },
+      "block_order": [
+        "product_rT4FVm",
+        "product_Vda8Qj",
+        "product_bXj9A8",
+        "product_89JFLb",
+        "product_44ULmJ",
+        "product_EDUfkM"
+      ],
+      "settings": {
+        "heading": "Tisso vison in the wild"
+      }
     }
   },
   "order": [
