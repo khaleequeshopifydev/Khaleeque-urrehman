@@ -388,25 +388,25 @@
 
 /* Content box — bottom-left overlay, desktop only has heading + description */
 .tv-banner__content {
-  position: relative;
+  position: absolute;
+  bottom: calc(var(--tv-hero-pad-bottom) + 4rem); /* positioned above button */
+  left: 0;
   z-index: 1;
   max-width: var(--tv-hero-content-max);
   padding-left: var(--tv-hero-pad-left);
-  padding-bottom: 1.5rem; /* gap between content and button */
   display: flex;
   flex-direction: column;
   gap: 1rem; /* gap between heading and description */
-  align-self: flex-start; /* left alignment */
-  margin-bottom: 0;
 }
 
 /* Button wrapper — desktop: separate element for flex positioning */
 .tv-banner__btn-wrapper {
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  left: 0;
   z-index: 1;
   padding-left: var(--tv-hero-pad-left);
   padding-bottom: var(--tv-hero-pad-bottom);
-  align-self: flex-start; /* left alignment */
 }
 
 .tv-banner__heading {
@@ -525,6 +525,9 @@
   }
 
   .tv-banner__content {
+    position: relative; /* override absolute on mobile */
+    bottom: auto;
+    left: auto;
     max-width: 100%;
     width: 100%;
     padding: 1.5rem 1.5rem 0; /* tighter top padding */
@@ -533,7 +536,6 @@
     align-self: stretch;
     order: 1; /* heading + description first */
     gap: 0.5rem; /* tighter gap between heading and description */
-    margin-bottom: 0;
   }
 
   .tv-banner__heading {
@@ -547,16 +549,19 @@
   }
 
   .tv-banner__btn-wrapper {
+    position: relative; /* override absolute on mobile */
+    bottom: auto;
+    left: auto;
     max-width: 100%;
     padding: 0 1.5rem 2rem; /* side padding + bottom */
     align-self: stretch;
     order: 3; /* button last */
-    margin-top: 0;
+    display: flex;
+    justify-content: center; /* center the button */
   }
 
   .tv-btn.tv-banner__btn {
-    width: 100%;
-    max-width: none;
+    width: auto; /* natural width like desktop */
     justify-content: center;
     padding: 0.75rem 1.5rem; /* reduced padding for mobile */
     font-size: 0.9375rem; /* slightly smaller on mobile */
