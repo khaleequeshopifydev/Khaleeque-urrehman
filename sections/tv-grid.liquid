@@ -113,6 +113,7 @@
 .tv-grid {
   /* Typography */
   --tv-font-primary: 'Jost', sans-serif;
+  --tv-font-secondary: 'Lustria', serif; /* for heading */
 
   /* Grid layout */
   --tv-grid-cols-desktop:      3;
@@ -159,7 +160,7 @@
    SECTION HEADING
    ───────────────────────────────────────────────────────────── */
 .tv-grid__heading {
-  font-family: var(--tv-font-primary);
+  font-family: var(--tv-font-secondary); /* Lustria font for heading */
   font-size: var(--tv-grid-heading-size);
   font-weight: var(--tv-grid-heading-weight);
   line-height: var(--tv-grid-heading-lh);
@@ -189,6 +190,7 @@
   overflow: hidden;
   background-color: #F5F5F5; /* fallback bg while image loads */
   border-radius: 0; /* sharp corners per Figma */
+  border: 1.5px solid #000000; /* black border from Figma */
 }
 
 /* Ensure image fills card completely */
