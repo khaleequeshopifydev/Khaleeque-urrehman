@@ -104,25 +104,6 @@
         >
       </button>
 
-      {%- comment -%} Logo {%- endcomment -%}
-      <div class="tv-drawer__logo">
-        {%- if logo_img != blank -%}
-          <img
-            src="{{ logo_img | image_url: width: 200 }}"
-            alt="{{ shop.name }}"
-            width="152"
-            height="19"
-          >
-        {%- else -%}
-          <img
-            src="{{ 'tisso-vison-logo.svg' | asset_url }}"
-            alt="{{ shop.name }}"
-            width="152"
-            height="19"
-          >
-        {%- endif -%}
-      </div>
-
       {%- comment -%} Announcement text {%- endcomment -%}
       {%- if announcement != blank -%}
         <p class="tv-drawer__announcement">{{ announcement }}</p>
@@ -454,36 +435,31 @@
 .tv-drawer__overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none; /* no overlay needed for full-width drawer */
 }
 
-.tv-drawer--open .tv-drawer__overlay {
-  opacity: 1;
-}
-
-/* Drawer panel - white container sliding from left */
+/* Drawer panel - white container sliding from top */
 .tv-drawer__panel {
   position: absolute;
   top: 0;
   left: 0;
-  bottom: 0;
-  width: 85%;
-  max-width: 25rem; /* 400px max */
+  right: 0;
+  width: 100%; /* full width on mobile */
   background-color: #FFFFFF;
-  transform: translateX(-100%);
+  transform: translateY(-100%); /* slide from top */
   transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1.5rem;
-  overflow-y: auto;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+  padding: 5rem 1.5rem 3rem; /* top padding for close button space, bottom for content */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* subtle shadow at bottom */
 }
 
 .tv-drawer--open .tv-drawer__panel {
-  transform: translateX(0);
+  transform: translateY(0);
 }
 
 /* Close button - top left */
@@ -518,19 +494,7 @@
   height: 1.5rem;
 }
 
-/* Logo - centered */
-.tv-drawer__logo {
-  margin-top: 3rem; /* space for close button */
-  margin-bottom: 2rem;
-}
-
-.tv-drawer__logo img {
-  display: block;
-  height: 1.1875rem; /* 19px - matches topbar */
-  width: auto;
-}
-
-/* Announcement text - centered */
+/* Announcement text - centered, top spacing for close button */
 .tv-drawer__announcement {
   font-family: var(--tv-font-primary);
   font-size: 1rem;
@@ -538,13 +502,13 @@
   line-height: 1.5;
   text-align: center;
   color: #000000;
-  margin: 0 0 2rem 0;
+  margin: 0 0 2rem 0; /* spacing below announcement */
   max-width: 20rem;
 }
 
 /* CTA button - centered */
 .tv-drawer__cta {
-  margin-top: auto; /* push to bottom if space available */
+  margin-bottom: 0; /* no extra bottom margin needed */
 }
 
 /* Hide drawer on desktop */
