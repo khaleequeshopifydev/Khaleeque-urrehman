@@ -110,7 +110,7 @@
       >
     {%- endif -%}
 
-    {%- comment -%} Content box — bottom-left positioning {%- endcomment -%}
+    {%- comment -%} Content box — heading + description {%- endcomment -%}
     <div class="tv-banner__content">
       {%- if heading != blank -%}
         <h1 class="tv-banner__heading">{{ heading }}</h1>
@@ -119,8 +119,11 @@
       {%- if description != blank -%}
         <p class="tv-banner__description">{{ description }}</p>
       {%- endif -%}
+    </div>
 
-      {%- if btn_label != blank -%}
+    {%- comment -%} Button — separate from content for mobile flex ordering {%- endcomment -%}
+    {%- if btn_label != blank -%}
+      <div class="tv-banner__btn-wrapper">
         <a
           href="{{ btn_link | default: '#' }}"
           class="tv-btn tv-btn--dark tv-banner__btn"
@@ -136,8 +139,8 @@
             >
           </span>
         </a>
-      {%- endif -%}
-    </div>
+      </div>
+    {%- endif -%}
 
   </div>
   {%- comment -%} ── END HERO ─────────────────────────────────── {%- endcomment -%}
@@ -177,8 +180,8 @@
   --tv-topbar-pad-x:     3.125rem;     /* 50px */
 
   /* Hero — from Figma */
-  --tv-hero-bg:          #FFFFFF;
-  --tv-hero-heading-size:   4.375rem;  /* 70px desktop */
+  --tv-hero-bg:             #FFFFFF;
+  --tv-hero-heading-size:   clamp(2.5rem, 5vw, 4.375rem); /* 70px desktop, responsive */
   --tv-hero-heading-weight: 500;
   --tv-hero-heading-lh:     1;         /* 100% */
   --tv-hero-heading-color:  #000000;
@@ -186,12 +189,12 @@
   --tv-hero-desc-weight:    400;
   --tv-hero-desc-lh:        1.4;       /* 140% */
   --tv-hero-desc-color:     #000000;
-  --tv-hero-content-width:  35%;       /* left content box */
-  --tv-hero-content-pad:    2.5rem;
+  --tv-hero-content-width:  36%;       /* left content box */
+  --tv-hero-content-pad:    3rem 3rem 4rem; /* top, sides, bottom */
 
   /* Marquee — from Figma */
   --tv-marquee-bg:          #F5F5F5;
-  --tv-marquee-height:      2.5rem;    /* estimated */
+  --tv-marquee-height:      2.5rem;    /* 40px — fixed */
   --tv-marquee-font-size:   1rem;      /* 16px desktop */
   --tv-marquee-font-weight: 400;
   --tv-marquee-color:       #000000;
@@ -213,12 +216,12 @@
   /* Button: yellow (CHOOSE GIFT) — from Figma */
   --tv-btn-yellow-bg:    #FFF544;
   --tv-btn-yellow-color: #000000;
-  --tv-btn-yellow-pad:   0.625rem 1.5rem; /* balanced padding, height ~= 64px row */
+  --tv-btn-yellow-pad:   0.75rem 1.5rem; /* adjusted */
 
   /* Button: dark (SHOP NOW / ADD TO CART) */
   --tv-btn-dark-bg:      #000000;
   --tv-btn-dark-color:   #ffffff;
-  --tv-btn-dark-pad:     0.875rem 1.75rem;
+  --tv-btn-dark-pad:     0.875rem 2rem; /* adjusted */
 
   font-family: var(--tv-font-primary);
   box-sizing: border-box;
@@ -364,6 +367,7 @@
   position: relative;
   width: 100%;
   height: calc(100vh - var(--tv-topbar-height) - var(--tv-marquee-height));
+  min-height: 28rem; /* fallback if calc fails or viewport too small */
   background-color: var(--tv-hero-bg);
   display: flex;
   align-items: flex-end; /* content at bottom */
@@ -376,12 +380,12 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain; /* changed from cover — keeps illustration properly sized */
+  object-position: center;
   z-index: 0;
 }
 
-/* Content box — bottom-left overlay */
+/* Content box — bottom-left overlay, desktop only has heading + description */
 .tv-banner__content {
   position: relative;
   z-index: 1;
@@ -389,7 +393,17 @@
   padding: var(--tv-hero-content-pad);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
+  align-self: flex-end; /* bottom positioning */
+}
+
+/* Button wrapper — desktop: inline with content, mobile: separate flex child */
+.tv-banner__btn-wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: var(--tv-hero-content-width);
+  padding: 0 3rem 4rem; /* matches content box horizontal padding */
+  align-self: flex-end; /* bottom left with content */
 }
 
 .tv-banner__heading {
@@ -400,6 +414,7 @@
   letter-spacing: 0;
   color: var(--tv-hero-heading-color);
   margin: 0;
+  max-width: max-content; /* prevents wrapping */
 }
 
 .tv-banner__description {
@@ -410,6 +425,7 @@
   letter-spacing: 0;
   color: var(--tv-hero-desc-color);
   margin: 0;
+  max-width: 28rem; /* constrains description width */
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -489,30 +505,31 @@
     display: none;
   }
 
-  /* Hero — stacked layout, centered content */
+  /* Hero — stacked layout for mobile */
   .tv-banner__hero {
     height: auto;
-    min-height: 28rem;
+    min-height: auto;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+    align-items: stretch;
   }
 
   .tv-banner__illustration {
     position: relative;
     width: 100%;
-    height: 18rem;
+    height: 16rem;
     object-fit: contain;
-    order: 2; /* illustration in middle */
+    order: 2; /* illustration second — after content, before button */
+    margin: 1.5rem 0;
   }
 
   .tv-banner__content {
     max-width: 100%;
     width: 100%;
-    padding: 2rem 1.5rem 1rem;
+    padding: 2rem 1.5rem 0;
     text-align: center;
     align-items: center;
-    order: 1; /* content on top */
+    align-self: stretch;
+    order: 1; /* heading + description first */
   }
 
   .tv-banner__heading {
@@ -522,13 +539,20 @@
   .tv-banner__description {
     font-size: 1rem; /* 16px */
     line-height: 1.3; /* 130% */
+    max-width: none; /* remove desktop constraint */
+  }
+
+  .tv-banner__btn-wrapper {
+    max-width: 100%;
+    padding: 0 1.5rem 2rem;
+    align-self: stretch;
+    order: 3; /* button last — after illustration */
   }
 
   .tv-btn.tv-banner__btn {
     width: 100%;
+    max-width: none;
     justify-content: center;
-    order: 3; /* button at bottom */
-    margin-top: 1rem;
   }
 
   /* Marquee — smaller font on mobile */
