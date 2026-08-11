@@ -16,6 +16,12 @@
   assign announcement = section.settings.announcement_text
   assign cta_label    = section.settings.cta_label
   assign cta_link     = section.settings.cta_link
+  assign heading      = section.settings.heading
+  assign description  = section.settings.description
+  assign btn_label    = section.settings.btn_label
+  assign btn_link     = section.settings.btn_link
+  assign illustration = section.settings.illustration
+  assign marquee_text = section.settings.marquee_text
 -%}
 
 <div class="tv-banner" data-section-id="{{ section.id }}">
@@ -73,6 +79,84 @@
   </div>
   {%- comment -%} ── END TOPBAR ───────────────────────────────── {%- endcomment -%}
 
+
+  {%- comment -%} ── 2. HERO ──────────────────────────────────── {%- endcomment -%}
+  <div class="tv-banner__hero">
+
+    {%- comment -%} Background illustration — full bleed {%- endcomment -%}
+    {%- if illustration != blank -%}
+      <img
+        src="{{ illustration | image_url: width: 1440 }}"
+        srcset="
+          {{ illustration | image_url: width: 750 }} 750w,
+          {{ illustration | image_url: width: 1100 }} 1100w,
+          {{ illustration | image_url: width: 1440 }} 1440w
+        "
+        sizes="100vw"
+        alt=""
+        class="tv-banner__illustration"
+        width="{{ illustration.width }}"
+        height="{{ illustration.height }}"
+        loading="eager"
+        fetchpriority="high"
+      >
+    {%- else -%}
+      <img
+        src="{{ 'tv-banner-illustration.png' | asset_url }}"
+        alt=""
+        class="tv-banner__illustration"
+        loading="eager"
+        fetchpriority="high"
+      >
+    {%- endif -%}
+
+    {%- comment -%} Content box — bottom-left positioning {%- endcomment -%}
+    <div class="tv-banner__content">
+      {%- if heading != blank -%}
+        <h1 class="tv-banner__heading">{{ heading }}</h1>
+      {%- endif -%}
+
+      {%- if description != blank -%}
+        <p class="tv-banner__description">{{ description }}</p>
+      {%- endif -%}
+
+      {%- if btn_label != blank -%}
+        <a
+          href="{{ btn_link | default: '#' }}"
+          class="tv-btn tv-btn--dark tv-banner__btn"
+        >
+          <span class="tv-btn__text">{{ btn_label }}</span>
+          <span class="tv-btn__arrow" aria-hidden="true">
+            <img
+              src="{{ 'tv-icon-arrow.svg' | asset_url }}"
+              alt=""
+              width="26"
+              height="12"
+              class="tv-btn__arrow-icon tv-btn__arrow-icon--light"
+            >
+          </span>
+        </a>
+      {%- endif -%}
+    </div>
+
+  </div>
+  {%- comment -%} ── END HERO ─────────────────────────────────── {%- endcomment -%}
+
+
+  {%- comment -%} ── 3. MARQUEE ───────────────────────────────── {%- endcomment -%}
+  {%- if marquee_text != blank -%}
+    <div class="tv-banner__marquee" aria-label="{{ marquee_text }}">
+      <div class="tv-marquee__track">
+        {%- comment -%} Text repeated 4× for seamless infinite scroll {%- endcomment -%}
+        <span class="tv-marquee__text">{{ marquee_text }}</span>
+        <span class="tv-marquee__text">{{ marquee_text }}</span>
+        <span class="tv-marquee__text">{{ marquee_text }}</span>
+        <span class="tv-marquee__text">{{ marquee_text }}</span>
+      </div>
+    </div>
+  {%- endif -%}
+  {%- comment -%} ── END MARQUEE ──────────────────────────────── {%- endcomment -%}
+
 </div>
 
 {% stylesheet %}
@@ -91,6 +175,28 @@
   --tv-topbar-height:    4rem;         /* 64px */
   --tv-topbar-pad-y:     0.625rem;     /* 10px */
   --tv-topbar-pad-x:     3.125rem;     /* 50px */
+
+  /* Hero — from Figma */
+  --tv-hero-bg:          #FFFFFF;
+  --tv-hero-heading-size:   4.375rem;  /* 70px desktop */
+  --tv-hero-heading-weight: 500;
+  --tv-hero-heading-lh:     1;         /* 100% */
+  --tv-hero-heading-color:  #000000;
+  --tv-hero-desc-size:      1.25rem;   /* 20px desktop */
+  --tv-hero-desc-weight:    400;
+  --tv-hero-desc-lh:        1.4;       /* 140% */
+  --tv-hero-desc-color:     #000000;
+  --tv-hero-content-width:  35%;       /* left content box */
+  --tv-hero-content-pad:    2.5rem;
+
+  /* Marquee — from Figma */
+  --tv-marquee-bg:          #F5F5F5;
+  --tv-marquee-height:      2.5rem;    /* estimated */
+  --tv-marquee-font-size:   1rem;      /* 16px desktop */
+  --tv-marquee-font-weight: 400;
+  --tv-marquee-color:       #000000;
+  --tv-marquee-gap:         3rem;
+  --tv-marquee-speed:       25s;
 
   /* Announcement text — from Figma */
   --tv-announce-size:    1rem;         /* 16px */
@@ -251,12 +357,183 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
+   2. HERO
+   Full-bleed illustration with bottom-left content overlay
+   ───────────────────────────────────────────────────────────── */
+.tv-banner__hero {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--tv-topbar-height) - var(--tv-marquee-height));
+  background-color: var(--tv-hero-bg);
+  display: flex;
+  align-items: flex-end; /* content at bottom */
+  overflow: hidden;
+}
+
+/* Background illustration — absolute positioned, full coverage */
+.tv-banner__illustration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  z-index: 0;
+}
+
+/* Content box — bottom-left overlay */
+.tv-banner__content {
+  position: relative;
+  z-index: 1;
+  max-width: var(--tv-hero-content-width);
+  padding: var(--tv-hero-content-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tv-banner__heading {
+  font-family: var(--tv-font-primary);
+  font-size: var(--tv-hero-heading-size);
+  font-weight: var(--tv-hero-heading-weight);
+  line-height: var(--tv-hero-heading-lh);
+  letter-spacing: 0;
+  color: var(--tv-hero-heading-color);
+  margin: 0;
+}
+
+.tv-banner__description {
+  font-family: var(--tv-font-primary);
+  font-size: var(--tv-hero-desc-size);
+  font-weight: var(--tv-hero-desc-weight);
+  line-height: var(--tv-hero-desc-lh);
+  letter-spacing: 0;
+  color: var(--tv-hero-desc-color);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. MARQUEE
+   Infinite scrolling text strip at bottom
+   ───────────────────────────────────────────────────────────── */
+.tv-banner__marquee {
+  width: 100%;
+  height: var(--tv-marquee-height);
+  background-color: var(--tv-marquee-bg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.tv-marquee__track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  gap: var(--tv-marquee-gap);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tv-marquee__track {
+    animation: tv-marquee-scroll var(--tv-marquee-speed) linear infinite;
+  }
+}
+
+@keyframes tv-marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.tv-marquee__text {
+  font-family: var(--tv-font-secondary); /* Lustria */
+  font-size: var(--tv-marquee-font-size);
+  font-weight: var(--tv-marquee-font-weight);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--tv-marquee-color);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Dot separator between repeated text items */
+.tv-marquee__text::after {
+  content: '·';
+  margin-left: var(--tv-marquee-gap);
+}
+
+/* ─────────────────────────────────────────────────────────────
    RESPONSIVE — Mobile (≤ 749px)
    ───────────────────────────────────────────────────────────── */
 @media screen and (max-width: 749px) {
-  /* Topbar hidden — Horizon header handles mobile navigation */
+  /* Topbar — simplified: hamburger left, logo center, hide announcement + button */
   .tv-banner__topbar {
+    justify-content: center;
+    padding: var(--tv-topbar-pad-y) 1.5rem;
+  }
+
+  .tv-banner__topbar::before {
+    content: '☰';
+    position: absolute;
+    left: 1.5rem;
+    font-size: 1.5rem;
+    color: #000000;
+    line-height: 1;
+  }
+
+  .tv-banner__logo-link {
+    order: 0;
+  }
+
+  .tv-banner__announcement,
+  .tv-banner__cta {
     display: none;
+  }
+
+  /* Hero — stacked layout, centered content */
+  .tv-banner__hero {
+    height: auto;
+    min-height: 28rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .tv-banner__illustration {
+    position: relative;
+    width: 100%;
+    height: 18rem;
+    object-fit: contain;
+    order: 2; /* illustration in middle */
+  }
+
+  .tv-banner__content {
+    max-width: 100%;
+    width: 100%;
+    padding: 2rem 1.5rem 1rem;
+    text-align: center;
+    align-items: center;
+    order: 1; /* content on top */
+  }
+
+  .tv-banner__heading {
+    font-size: 1.875rem; /* 30px */
+  }
+
+  .tv-banner__description {
+    font-size: 1rem; /* 16px */
+    line-height: 1.3; /* 130% */
+  }
+
+  .tv-btn.tv-banner__btn {
+    width: 100%;
+    justify-content: center;
+    order: 3; /* button at bottom */
+    margin-top: 1rem;
+  }
+
+  /* Marquee — smaller font on mobile */
+  .tv-marquee__text {
+    font-size: 0.875rem; /* 14px */
   }
 }
 {% endstylesheet %}
@@ -293,6 +570,49 @@
       "type": "url",
       "id": "cta_link",
       "label": "CTA button link"
+    },
+    {
+      "type": "header",
+      "content": "Hero"
+    },
+    {
+      "type": "image_picker",
+      "id": "illustration",
+      "label": "Background illustration",
+      "info": "Leave empty to use the default illustration PNG"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "The Gift Guide"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season."
+    },
+    {
+      "type": "text",
+      "id": "btn_label",
+      "label": "Button label",
+      "default": "SHOP NOW"
+    },
+    {
+      "type": "url",
+      "id": "btn_link",
+      "label": "Button link"
+    },
+    {
+      "type": "header",
+      "content": "Marquee"
+    },
+    {
+      "type": "text",
+      "id": "marquee_text",
+      "label": "Marquee text",
+      "default": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL"
     }
   ],
   "presets": [
