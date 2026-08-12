@@ -21,15 +21,20 @@ class TvMobileDrawer {
   }
 
   init() {
-    // Hamburger click - toggle drawer
+    // Hamburger/Close icon click - toggle drawer
     if (this.hamburger) {
       this.hamburger.addEventListener('click', (e) => {
-        // Only trigger if clicking on ::before pseudo-element area (left side)
+        // Check if clicking on hamburger/close icon area (left side) or if on small screen
         const rect = this.hamburger.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         
-        // If click is within first 80px (hamburger area), toggle drawer
-        if (clickX < 80) {
+        // Mobile: if click is within first 100px (hamburger/close area), toggle
+        // Also check if target is the topbar itself (not logo or other elements)
+        const isHamburgerArea = clickX < 100;
+        const isTopbarClick = e.target === this.hamburger || e.target.closest('.tv-banner__topbar') === this.hamburger;
+        
+        if (isHamburgerArea && isTopbarClick) {
+          e.preventDefault();
           this.toggle();
         }
       });
