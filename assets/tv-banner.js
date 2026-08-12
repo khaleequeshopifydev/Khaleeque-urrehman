@@ -13,6 +13,7 @@ class TvMobileDrawer {
 
     this.panel = this.drawer.querySelector('.tv-drawer__panel');
     this.overlay = this.drawer.querySelector('.tv-drawer__overlay');
+    this.closeBtn = this.drawer.querySelector('.tv-drawer__close');
     this.hamburger = document.querySelector('.tv-banner__topbar');
     
     this.isOpen = false;
@@ -21,23 +22,23 @@ class TvMobileDrawer {
   }
 
   init() {
-    // Hamburger/Close icon click - toggle drawer
+    // Hamburger click - open drawer
     if (this.hamburger) {
       this.hamburger.addEventListener('click', (e) => {
-        // Check if clicking on hamburger/close icon area (left side) or if on small screen
+        // Only open if clicking on hamburger area (left side) and drawer is closed
         const rect = this.hamburger.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         
-        // Mobile: if click is within first 100px (hamburger/close area), toggle
-        // Also check if target is the topbar itself (not logo or other elements)
-        const isHamburgerArea = clickX < 100;
-        const isTopbarClick = e.target === this.hamburger || e.target.closest('.tv-banner__topbar') === this.hamburger;
-        
-        if (isHamburgerArea && isTopbarClick) {
+        if (clickX < 100 && !this.isOpen) {
           e.preventDefault();
-          this.toggle();
+          this.open();
         }
       });
+    }
+
+    // Close button click
+    if (this.closeBtn) {
+      this.closeBtn.addEventListener('click', () => this.close());
     }
 
     // Overlay click - close drawer
@@ -53,26 +54,23 @@ class TvMobileDrawer {
     });
   }
 
-  toggle() {
-    if (this.isOpen) {
-      this.close();
-    } else {
-      this.open();
-    }
-  }
-
   open() {
     this.drawer.classList.add('tv-drawer--open');
-    this.hamburger.classList.add('tv-menu-open'); // toggle hamburger icon
     this.isOpen = true;
     
     // Prevent body scroll when drawer open
     document.body.style.overflow = 'hidden';
+    
+    // Focus close button for accessibility
+    setTimeout(() => {
+      if (this.closeBtn) {
+        this.closeBtn.focus();
+      }
+    }, 300);
   }
 
   close() {
     this.drawer.classList.remove('tv-drawer--open');
-    this.hamburger.classList.remove('tv-menu-open'); // toggle back to hamburger
     this.isOpen = false;
     
     // Restore body scroll
