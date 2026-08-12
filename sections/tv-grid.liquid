@@ -124,18 +124,16 @@
       {%- comment -%} Content container {%- endcomment -%}
       <div class="tv-popup__content">
         
-        {%- comment -%} Top row: Image + Product info {%- endcomment -%}
+        {%- comment -%} Top row: Image + Product info + Description (same row) {%- endcomment -%}
         <div class="tv-popup__top">
           <img class="tv-popup__image" src="" alt="" width="120" height="120">
           
           <div class="tv-popup__info">
             <h3 class="tv-popup__title"></h3>
             <p class="tv-popup__price"></p>
+            <p class="tv-popup__description"></p>
           </div>
         </div>
-
-        {%- comment -%} Description {%- endcomment -%}
-        <p class="tv-popup__description"></p>
 
         {%- comment -%} Variants container - populated by JavaScript {%- endcomment -%}
         <div class="tv-popup__variants"></div>
@@ -407,7 +405,7 @@
 .tv-popup__modal {
   position: relative;
   background-color: #FFFFFF;
-  max-width: 37.5rem; /* 600px desktop */
+  max-width: 25rem; /* 400px - more compact */
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -449,11 +447,11 @@
   padding: 2.25rem 1.0625rem 2rem; /* top 36px, left/right 17px, bottom 32px */
 }
 
-/* Top row: Image + Info */
+/* Top row: Image + Info + Description */
 .tv-popup__top {
   display: flex;
-  gap: 1.25rem; /* 20px */
-  margin-bottom: 1rem; /* 16px */
+  gap: 1rem; /* 16px - tighter gap */
+  margin-bottom: 1.5rem; /* 24px to variants */
   align-items: flex-start;
 }
 
@@ -467,6 +465,9 @@
 
 .tv-popup__info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* 8px between elements */
 }
 
 .tv-popup__title {
@@ -476,7 +477,7 @@
   line-height: 1.2; /* 120% */
   letter-spacing: 0;
   color: #000000;
-  margin: 0 0 0.5rem 0; /* 8px gap to price */
+  margin: 0;
 }
 
 .tv-popup__price {
@@ -489,7 +490,7 @@
   margin: 0;
 }
 
-/* Description */
+/* Description - now inside .tv-popup__info */
 .tv-popup__description {
   font-family: 'Lustria', serif; /* Lustria, not Jost! */
   font-size: 1rem; /* 16px */
@@ -497,7 +498,7 @@
   line-height: 1.2; /* 120% */
   letter-spacing: 0;
   color: #000000;
-  margin: 0 0 1.5rem 0; /* 24px to Color label */
+  margin: 0;
 }
 
 /* Variants container */
@@ -570,7 +571,7 @@
 
 .tv-variant-strip {
   width: 0.75rem; /* 12px */
-  height: 1.5rem; /* 24px */
+  height: 100%; /* Fill full button height (48px) */
   border-radius: 0;
 }
 
@@ -587,7 +588,9 @@
   border: 1px solid #E0E0E0;
   cursor: pointer;
   appearance: none;
-  background-image: url("{{ 'tv-icon-chevron.svg' | asset_url }}");
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 0.75rem; /* 12px chevron */
@@ -599,10 +602,9 @@
   border-color: #000000;
 }
 
-/* Dropdown options styling - selected option black bg */
+/* Dropdown options styling - only selected option has black bg */
 .tv-popup__size-select option {
   padding: 0.625rem; /* 10px */
-  text-align: center;
   background-color: #FFFFFF;
   color: #000000;
 }
