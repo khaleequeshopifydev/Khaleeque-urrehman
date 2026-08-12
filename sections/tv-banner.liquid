@@ -86,9 +86,44 @@
     {%- comment -%} Overlay - dark background {%- endcomment -%}
     <div class="tv-drawer__overlay" aria-hidden="true"></div>
 
-    {%- comment -%} Drawer panel - slides from left {%- endcomment -%}
+    {%- comment -%} Drawer panel {%- endcomment -%}
     <div class="tv-drawer__panel" role="dialog" aria-modal="true" aria-label="Mobile menu">
       
+      {%- comment -%} Header: Close button (left) + Logo (center) {%- endcomment -%}
+      <div class="tv-drawer__header">
+        <button
+          type="button"
+          class="tv-drawer__close"
+          aria-label="Close menu"
+        >
+          <img
+            src="{{ 'tv-icon-close.svg' | asset_url }}"
+            alt=""
+            width="20"
+            height="20"
+            class="tv-drawer__close-icon"
+          >
+        </button>
+
+        <div class="tv-drawer__logo">
+          {%- if logo_img != blank -%}
+            <img
+              src="{{ logo_img | image_url: width: 200 }}"
+              alt="{{ shop.name }}"
+              width="152"
+              height="19"
+            >
+          {%- else -%}
+            <img
+              src="{{ 'tisso-vison-logo.svg' | asset_url }}"
+              alt="{{ shop.name }}"
+              width="152"
+              height="19"
+            >
+          {%- endif -%}
+        </div>
+      </div>
+
       {%- comment -%} Announcement text {%- endcomment -%}
       {%- if announcement != blank -%}
         <p class="tv-drawer__announcement">{{ announcement }}</p>
@@ -427,10 +462,10 @@
   pointer-events: none; /* no overlay needed for full-width drawer */
 }
 
-/* Drawer panel - white container sliding from top, BELOW topbar */
+/* Drawer panel - white container sliding from top, covers topbar */
 .tv-drawer__panel {
   position: absolute;
-  top: var(--tv-topbar-height); /* start below topbar (64px) */
+  top: 0; /* cover topbar from top */
   left: 0;
   right: 0;
   width: 100%; /* full width on mobile */
@@ -440,15 +475,70 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1.5rem 3rem; /* normal padding, no extra space for close button */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* subtle shadow at bottom */
+  padding: 2rem 1.5rem 3rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .tv-drawer--open .tv-drawer__panel {
   transform: translateY(0);
 }
 
-/* No separate close button needed - hamburger toggles in topbar */
+/* Drawer header - close button and logo on same line */
+.tv-drawer__header {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  min-height: 2.5rem; /* minimum height for header */
+}
+
+/* Close button - absolute positioned on left */
+.tv-drawer__close {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease;
+}
+
+.tv-drawer__close:hover {
+  transform: translateY(-50%) scale(1.1);
+}
+
+.tv-drawer__close:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+}
+
+.tv-drawer__close-icon {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Logo - centered in header */
+.tv-drawer__logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tv-drawer__logo img {
+  display: block;
+  height: 1.1875rem; /* 19px - matches topbar */
+  width: auto;
+}
 
 /* Announcement text - centered, top spacing for close button */
 .tv-drawer__announcement {
@@ -690,11 +780,6 @@
   /* Marquee — smaller font on mobile */
   .tv-marquee__text {
     font-size: 0.875rem; /* 14px */
-  }
-
-  /* Hamburger icon toggle when menu open */
-  .tv-banner__topbar.tv-menu-open::before {
-    content: '✕'; /* close icon when menu open */
   }
 }
 {% endstylesheet %}
