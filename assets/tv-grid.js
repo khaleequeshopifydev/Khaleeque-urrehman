@@ -360,6 +360,10 @@ class TvProductPopup {
   }
 
   async addToCart() {
+    console.log('Add to Cart clicked!'); // Debug log
+    console.log('Selected variant:', this.selectedVariant); // Debug log
+    console.log('Selected options:', this.selectedOptions); // Debug log
+    
     if (!this.selectedVariant) {
       alert('Please select all options');
       return;
@@ -372,6 +376,8 @@ class TvProductPopup {
     }
 
     try {
+      console.log('Attempting to add to cart...'); // Debug
+      
       // Add main product to cart
       const formData = {
         items: [{
@@ -388,7 +394,14 @@ class TvProductPopup {
         body: JSON.stringify(formData)
       });
 
-      if (!response.ok) throw new Error('Failed to add to cart');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Cart add failed:', errorText);
+        throw new Error('Failed to add to cart');
+      }
+
+      const result = await response.json();
+      console.log('Added to cart successfully:', result); // Debug
 
       // Special logic: if Black + Medium, auto-add "Soft Winter Jacket"
       await this.autoAddSoftWinterJacket();
@@ -396,8 +409,13 @@ class TvProductPopup {
       // Success - close popup (no alert)
       this.close();
 
-      // Optionally trigger cart drawer/update
+      // Trigger cart drawer/update
       document.dispatchEvent(new CustomEvent('cart:updated'));
+      
+      // Also try Shopify theme cart update events
+      if (window.theme && window.theme.cart) {
+        window.theme.cart.updateCart();
+      }
 
     } catch (error) {
       console.error('Add to cart error:', error);
