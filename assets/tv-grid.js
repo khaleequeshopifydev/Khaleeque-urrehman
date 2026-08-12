@@ -325,9 +325,17 @@ class TvProductPopup {
       addBtn.removeAttribute('data-added');
 
       // ── POST to Shopify AJAX Cart API ─────────────────────
+      // Include sections param so cart drawer HTML comes back
+      // in the response — exactly what Horizon's product-form.js does
+      const cartItemsEl = document.querySelector('cart-items-component');
+      const cartSectionId = cartItemsEl?.dataset?.sectionId || '';
+
       const formData = new FormData();
       formData.append('id',       this.selectedVariant.id);
       formData.append('quantity', '1');
+      if (cartSectionId) {
+        formData.append('sections', cartSectionId);
+      }
 
       const addRes = await fetch('/cart/add.js', {
         method: 'POST',
@@ -339,7 +347,8 @@ class TvProductPopup {
         throw new Error(err.description || err.message || 'Failed to add to cart');
       }
 
-      console.log('[TvPopup] Product added to cart');
+      const addData = await addRes.json();
+      console.log('[TvPopup] Product added to cart', addData);
 
       // ── Auto-add "Soft Winter Jacket" if Black + Medium ───
       await this.autoAddSoftWinterJacket();
@@ -362,13 +371,41 @@ class TvProductPopup {
         timestamp: Date.now()
       }));
 
-      // ── Refresh cart-items-component (updates cart drawer) ─
-      // This is the same method Horizon calls after adding to cart
-      const cartItemsComponent = document.querySelector('cart-items-component');
-      if (cartItemsComponent && typeof cartItemsComponent.fetchCartData === 'function') {
-        cartItemsComponent.fetchCartData().then(() => {
-          console.log('[TvPopup] Cart drawer contents refreshed');
-        }).catch(() => {});
+      // ── Re-render cart drawer section via sectionRenderer ─
+      // If sections HTML came back in addData, morph it directly.
+      // Otherwise trigger sectionRenderer to re-fetch.
+      if (cartSectionId) {
+        const sectionsHtml = addData?.sections?.[cartSectionId];
+        if (sectionsHtml && cartItemsEl) {
+          // Sections HTML returned — dispatch event so cart-items-component morphs itself
+          // This is exactly what Horizon's product-form.js does
+          const deferredPromise = Promise.resolve({
+            cart: { totalQuantity: cart.item_count },
+            detail: {
+              sections:  addData.sections,
+              items:     cart.items,
+              itemCount: cart.item_count,
+              source:    'tv-popup'
+            }
+          });
+
+          cartItemsEl.dispatchEvent(new CustomEvent('shopify:cart:lines-update', {
+            bubbles: true,
+            detail: {
+              action:  'add',
+              context: 'product',
+              promise: deferredPromise
+            }
+          }));
+          console.log('[TvPopup] Cart drawer morphed via sections HTML');
+        } else {
+          // No sections HTML — fallback: call fetchCartData then re-render
+          if (cartItemsEl && typeof cartItemsEl.fetchCartData === 'function') {
+            cartItemsEl.fetchCartData().then(() => {
+              console.log('[TvPopup] Cart drawer re-fetched');
+            }).catch(() => {});
+          }
+        }
       }
 
       // ── Success state (black bg, just "ADDED" text) ───────
