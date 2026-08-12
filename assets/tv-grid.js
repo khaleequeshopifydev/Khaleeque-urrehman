@@ -119,9 +119,31 @@ class TvProductPopup {
     // Group variants by option names
     const options = this.currentProduct.options;
     
-    options.forEach((option, index) => {
+    // IMPORTANT: Create array with original index preserved
+    const optionsWithIndex = options.map((option, originalIndex) => ({
+      option,
+      originalIndex
+    }));
+    
+    // Sort: Color FIRST, then Size
+    const sortedOptions = [...optionsWithIndex].sort((a, b) => {
+      const nameA = (a.option.name || a.option).toLowerCase();
+      const nameB = (b.option.name || b.option).toLowerCase();
+      
+      // Color options come first
+      if (nameA.includes('color') || nameA.includes('colour')) return -1;
+      if (nameB.includes('color') || nameB.includes('colour')) return 1;
+      
+      // Size options come after color
+      if (nameA.includes('size')) return 1;
+      if (nameB.includes('size')) return -1;
+      
+      return 0; // maintain order for other options
+    });
+    
+    sortedOptions.forEach(({ option, originalIndex }) => {
       const optionName = option.name || option; // handle both formats
-      const optionValues = option.values || this.getOptionValues(index);
+      const optionValues = option.values || this.getOptionValues(originalIndex); // Use original index!
       
       if (!optionValues || optionValues.length === 0) return;
 
@@ -163,17 +185,18 @@ class TvProductPopup {
         btn.classList.add('tv-variant-btn--selected');
       }
 
-      // Create dual strips
+      // Create dual strips - ALWAYS 2 strips
       const strips = document.createElement('div');
       strips.className = 'tv-variant-strips';
 
+      // First strip = option color value
       const colorHex = this.getColorHex(value);
-      
       const strip1 = document.createElement('span');
       strip1.className = 'tv-variant-strip';
       strip1.style.backgroundColor = colorHex;
       strips.appendChild(strip1);
 
+      // Second strip = ALWAYS black (not dependent on selection)
       const strip2 = document.createElement('span');
       strip2.className = 'tv-variant-strip';
       strip2.style.backgroundColor = '#000000';
@@ -198,14 +221,16 @@ class TvProductPopup {
     select.className = 'tv-popup__size-select';
     select.dataset.option = optionName;
 
-    // Placeholder option
+    // Placeholder option - only shown when nothing is selected
     const placeholder = document.createElement('option');
     placeholder.value = '';
     placeholder.textContent = 'Choose your size';
     placeholder.disabled = true;
+    placeholder.hidden = true; // IMPORTANT: Hide from dropdown options
     placeholder.selected = !this.selectedOptions[optionName];
     select.appendChild(placeholder);
 
+    // Add actual size options
     values.forEach(value => {
       const option = document.createElement('option');
       option.value = value;
