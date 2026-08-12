@@ -349,50 +349,31 @@ class TvProductPopup {
       const cart    = await cartRes.json();
       console.log('[TvPopup] Updated cart:', cart);
 
-      // ── Update cart icon (Horizon cart-icon custom element)
-      // cart-icon exposes renderCartBubble as a public method
+      // ── Update cart icon directly (Horizon public method) ─
       document.querySelectorAll('cart-icon').forEach(el => {
         if (typeof el.renderCartBubble === 'function') {
           el.renderCartBubble(cart.item_count, true);
         }
       });
 
-      // ── Also persist count for page transitions (Horizon uses sessionStorage)
+      // ── Persist count for page transitions ───────────────
       sessionStorage.setItem('cart-count', JSON.stringify({
         value:     String(cart.item_count),
         timestamp: Date.now()
       }));
 
-      // ── Dispatch Horizon's CartLinesUpdateEvent ───────────
-      // Horizon's cart-icon, header-actions, and cart-drawer all
-      // listen for StandardEvents.cartLinesUpdate on document.
-      // We create an equivalent CustomEvent with the resolved promise
-      // so the promise-based listeners resolve immediately.
-      const resolvedPromise = Promise.resolve({
-        cart: { totalQuantity: cart.item_count },
-        detail: {
-          items:      cart.items,
-          itemCount:  cart.item_count,
-          source:     'tv-popup',
-          sourceId:   'tv-product-popup'
-        }
-      });
+      // ── Refresh cart-items-component (updates cart drawer) ─
+      // This is the same method Horizon calls after adding to cart
+      const cartItemsComponent = document.querySelector('cart-items-component');
+      if (cartItemsComponent && typeof cartItemsComponent.fetchCartData === 'function') {
+        cartItemsComponent.fetchCartData().then(() => {
+          console.log('[TvPopup] Cart drawer contents refreshed');
+        }).catch(() => {});
+      }
 
-      document.dispatchEvent(new CustomEvent('shopify:cart:lines-update', {
-        bubbles: true,
-        detail: {
-          action:  'add',
-          context: 'product',
-          lines: [{ merchandiseId: String(this.selectedVariant.id), quantity: 1 }],
-          promise: resolvedPromise
-        }
-      }));
-
-      console.log('[TvPopup] Dispatched shopify:cart:lines-update');
-
-      // ── Success state then close ──────────────────────────
-      btnText.textContent       = 'ADDED ✓';
-      addBtn.dataset.added      = 'true';
+      // ── Success state (black bg, just "ADDED" text) ───────
+      btnText.textContent    = 'ADDED';
+      addBtn.dataset.added   = 'true';
       delete addBtn.dataset.loading;
 
       setTimeout(() => {
