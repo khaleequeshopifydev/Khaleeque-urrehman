@@ -52,6 +52,13 @@ class TvProductPopup {
       }
     });
 
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.tv-custom-dropdown')) {
+        this.closeAllDropdowns();
+      }
+    });
+
     // Add to cart button
     if (this.addToCartBtn) {
       this.addToCartBtn.addEventListener('click', () => this.addToCart());
@@ -185,26 +192,16 @@ class TvProductPopup {
         btn.classList.add('tv-variant-btn--selected');
       }
 
-      // Create dual strips - ALWAYS 2 strips
-      const strips = document.createElement('div');
-      strips.className = 'tv-variant-strips';
-
-      // First strip = option color value
+      // Create SINGLE strip (left accent) with option color
+      const strip = document.createElement('span');
+      strip.className = 'tv-variant-strip';
       const colorHex = this.getColorHex(value);
-      const strip1 = document.createElement('span');
-      strip1.className = 'tv-variant-strip';
-      strip1.style.backgroundColor = colorHex;
-      strips.appendChild(strip1);
+      strip.style.backgroundColor = colorHex; // Strip color = option value
+      btn.appendChild(strip);
 
-      // Second strip = ALWAYS black (not dependent on selection)
-      const strip2 = document.createElement('span');
-      strip2.className = 'tv-variant-strip';
-      strip2.style.backgroundColor = '#000000';
-      strips.appendChild(strip2);
-
-      btn.appendChild(strips);
-
+      // Text label
       const label = document.createElement('span');
+      label.className = 'tv-variant-label';
       label.textContent = value;
       btn.appendChild(label);
 
@@ -217,35 +214,74 @@ class TvProductPopup {
   }
 
   renderSizeOptions(container, optionName, values) {
-    const select = document.createElement('select');
-    select.className = 'tv-popup__size-select';
-    select.dataset.option = optionName;
+    // Create custom dropdown container
+    const dropdownWrapper = document.createElement('div');
+    dropdownWrapper.className = 'tv-custom-dropdown';
+    dropdownWrapper.dataset.option = optionName;
 
-    // Placeholder option - only shown when nothing is selected
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Choose your size';
-    placeholder.disabled = true;
-    placeholder.hidden = true; // IMPORTANT: Hide from dropdown options
-    placeholder.selected = !this.selectedOptions[optionName];
-    select.appendChild(placeholder);
+    // Selected display button
+    const selectedBtn = document.createElement('button');
+    selectedBtn.type = 'button';
+    selectedBtn.className = 'tv-custom-dropdown__selected';
+    
+    const selectedText = document.createElement('span');
+    selectedText.className = 'tv-custom-dropdown__text';
+    selectedText.textContent = this.selectedOptions[optionName] || 'Choose your size';
+    selectedBtn.appendChild(selectedText);
 
-    // Add actual size options
+    // Chevron icon
+    const chevron = document.createElement('span');
+    chevron.className = 'tv-custom-dropdown__chevron';
+    chevron.innerHTML = '<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    selectedBtn.appendChild(chevron);
+
+    // Dropdown menu
+    const menu = document.createElement('div');
+    menu.className = 'tv-custom-dropdown__menu';
+    menu.style.display = 'none';
+
     values.forEach(value => {
-      const option = document.createElement('option');
-      option.value = value;
+      const option = document.createElement('div');
+      option.className = 'tv-custom-dropdown__option';
       option.textContent = value;
+      option.dataset.value = value;
+      
       if (this.selectedOptions[optionName] === value) {
-        option.selected = true;
+        option.classList.add('tv-custom-dropdown__option--selected');
       }
-      select.appendChild(option);
+
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.selectOption(optionName, value);
+        this.closeAllDropdowns();
+      });
+
+      menu.appendChild(option);
     });
 
-    select.addEventListener('change', (e) => {
-      this.selectOption(optionName, e.target.value);
+    // Toggle dropdown
+    selectedBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = menu.style.display === 'block';
+      this.closeAllDropdowns();
+      
+      if (!isOpen) {
+        menu.style.display = 'block';
+        dropdownWrapper.classList.add('tv-custom-dropdown--open');
+      }
     });
 
-    container.appendChild(select);
+    dropdownWrapper.appendChild(selectedBtn);
+    dropdownWrapper.appendChild(menu);
+    container.appendChild(dropdownWrapper);
+  }
+
+  closeAllDropdowns() {
+    const allMenus = this.popup.querySelectorAll('.tv-custom-dropdown__menu');
+    allMenus.forEach(menu => menu.style.display = 'none');
+    
+    const allDropdowns = this.popup.querySelectorAll('.tv-custom-dropdown');
+    allDropdowns.forEach(dd => dd.classList.remove('tv-custom-dropdown--open'));
   }
 
   selectOption(optionName, value) {
@@ -270,6 +306,15 @@ class TvProductPopup {
     const price = this.popup.querySelector('.tv-popup__price');
     if (price) {
       price.textContent = this.formatMoney(this.selectedVariant.price);
+    }
+
+    // Update custom dropdown display text if it's a size option
+    const dropdown = this.popup.querySelector(`.tv-custom-dropdown[data-option="${optionName}"]`);
+    if (dropdown) {
+      const textEl = dropdown.querySelector('.tv-custom-dropdown__text');
+      if (textEl) {
+        textEl.textContent = value;
+      }
     }
 
     // Re-render variants to update selected state
