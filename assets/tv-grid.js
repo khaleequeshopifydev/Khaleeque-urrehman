@@ -284,9 +284,9 @@ class TvProductPopup {
   }
 
   formatMoney(cents) {
-    // Convert cents to euros and format
+    // Convert cents to euros and format with € symbol (not EUR text)
     const euros = (cents / 100).toFixed(2);
-    return `${euros.replace('.', ',')} EUR`;
+    return `${euros.replace('.', ',')}€`; // Euro symbol, not "EUR"
   }
 
   async addToCart() {
@@ -323,8 +323,7 @@ class TvProductPopup {
       // Special logic: if Black + Medium, auto-add "Soft Winter Jacket"
       await this.autoAddSoftWinterJacket();
 
-      // Success feedback
-      alert('Added to cart!');
+      // Success - close popup (no alert)
       this.close();
 
       // Optionally trigger cart drawer/update
