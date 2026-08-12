@@ -538,6 +538,7 @@
   align-items: center;
   gap: 0.75rem; /* 12px from strips to text */
   padding: 0.75rem 1rem; /* 12px 16px */
+  padding-left: 0; /* No left padding - strip touches edge */
   background-color: #FFFFFF;
   border: 1px solid #E0E0E0;
   cursor: pointer;
@@ -550,6 +551,7 @@
   text-transform: capitalize;
   color: #000000;
   height: 3rem; /* 48px */
+  overflow: hidden;
 }
 
 .tv-variant-btn:hover {
@@ -565,14 +567,17 @@
 /* Dual color strips */
 .tv-variant-strips {
   display: flex;
-  gap: 0.25rem; /* 4px between strips */
+  gap: 0; /* NO gap between strips - they touch */
   flex-shrink: 0;
+  height: 100%; /* Full button height */
+  margin-left: 0; /* Align to left edge */
 }
 
 .tv-variant-strip {
-  width: 0.75rem; /* 12px */
+  width: 0.625rem; /* 10px each strip */
   height: 100%; /* Fill full button height (48px) */
   border-radius: 0;
+  flex-shrink: 0;
 }
 
 /* Size dropdown */
@@ -602,11 +607,16 @@
   border-color: #000000;
 }
 
-/* Dropdown options styling - only selected option has black bg */
+/* Dropdown options styling - black hover and selected */
 .tv-popup__size-select option {
   padding: 0.625rem; /* 10px */
   background-color: #FFFFFF;
   color: #000000;
+}
+
+.tv-popup__size-select option:hover {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
 }
 
 .tv-popup__size-select option:checked {
