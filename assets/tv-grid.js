@@ -406,16 +406,30 @@ class TvProductPopup {
       // Special logic: if Black + Medium, auto-add "Soft Winter Jacket"
       await this.autoAddSoftWinterJacket();
 
+      // Fetch updated cart state
+      const cartResponse = await fetch('/cart.js');
+      const cart = await cartResponse.json();
+      console.log('Updated cart:', cart); // Debug
+      
+      // Trigger Shopify StandardEvents.cartLinesUpdate (Horizon theme event)
+      const cartUpdateEvent = new CustomEvent('cart:updated', {
+        bubbles: true,
+        detail: {
+          cart: cart,
+          itemCount: cart.item_count
+        }
+      });
+      document.dispatchEvent(cartUpdateEvent);
+      
+      // Also trigger standard cart update event for Shopify themes
+      const standardEvent = new CustomEvent('shopify:cartupdated', {
+        bubbles: true,
+        detail: { cart: cart }
+      });
+      document.dispatchEvent(standardEvent);
+
       // Success - close popup (no alert)
       this.close();
-
-      // Trigger cart drawer/update
-      document.dispatchEvent(new CustomEvent('cart:updated'));
-      
-      // Also try Shopify theme cart update events
-      if (window.theme && window.theme.cart) {
-        window.theme.cart.updateCart();
-      }
 
     } catch (error) {
       console.error('Add to cart error:', error);
@@ -432,7 +446,14 @@ class TvProductPopup {
       val.toLowerCase() === 'medium' || val.toLowerCase() === 'm'
     );
 
-    if (!isBlack || !isMedium) return;
+    console.log('Auto-add check:', { isBlack, isMedium, selectedOptions: this.selectedOptions }); // Debug
+
+    if (!isBlack || !isMedium) {
+      console.log('Not Black + Medium, skipping auto-add'); // Debug
+      return;
+    }
+
+    console.log('Black + Medium detected! Attempting to add Soft Winter Jacket...'); // Debug
 
     try {
       // Search for "Soft Winter Jacket" by handle or title
@@ -445,14 +466,17 @@ class TvProductPopup {
 
       for (const handle of possibleHandles) {
         try {
+          console.log(`Trying handle: ${handle}`); // Debug
           const response = await fetch(`/products/${handle}.js`);
           if (response.ok) {
             const product = await response.json();
+            console.log('Found product:', product.title); // Debug
+            
             if (product.variants && product.variants.length > 0) {
               // Add first available variant
               const variant = product.variants.find(v => v.available) || product.variants[0];
               
-              await fetch('/cart/add.js', {
+              const addResponse = await fetch('/cart/add.js', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -465,15 +489,20 @@ class TvProductPopup {
                 })
               });
 
-              console.log('Auto-added Soft Winter Jacket');
-              return; // Success, exit
+              if (addResponse.ok) {
+                console.log('✅ Auto-added Soft Winter Jacket successfully!'); // Debug
+                return; // Success, exit
+              }
             }
           }
         } catch (e) {
+          console.log(`Handle ${handle} not found, trying next...`); // Debug
           // Try next handle
           continue;
         }
       }
+      
+      console.warn('⚠️ Soft Winter Jacket product not found with any handle'); // Debug
     } catch (error) {
       console.error('Auto-add failed:', error);
       // Don't show error to user, it's a bonus feature
