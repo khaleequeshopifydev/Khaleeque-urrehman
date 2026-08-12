@@ -102,6 +102,64 @@
 
   </div>
 
+  {%- comment -%} ── POPUP MODAL ──────────────────────────────── {%- endcomment -%}
+  <div class="tv-popup" id="tv-product-popup" style="display: none;">
+    
+    {%- comment -%} Dark overlay background {%- endcomment -%}
+    <div class="tv-popup__overlay"></div>
+
+    {%- comment -%} Modal card {%- endcomment -%}
+    <div class="tv-popup__modal">
+      
+      {%- comment -%} Close button - top right {%- endcomment -%}
+      <button type="button" class="tv-popup__close" aria-label="Close">
+        <img
+          src="{{ 'tv-icon-close.svg' | asset_url }}"
+          alt=""
+          width="20"
+          height="20"
+        >
+      </button>
+
+      {%- comment -%} Content container {%- endcomment -%}
+      <div class="tv-popup__content">
+        
+        {%- comment -%} Top row: Image + Product info {%- endcomment -%}
+        <div class="tv-popup__top">
+          <img class="tv-popup__image" src="" alt="" width="120" height="120">
+          
+          <div class="tv-popup__info">
+            <h3 class="tv-popup__title"></h3>
+            <p class="tv-popup__price"></p>
+          </div>
+        </div>
+
+        {%- comment -%} Description {%- endcomment -%}
+        <p class="tv-popup__description"></p>
+
+        {%- comment -%} Variants container - populated by JavaScript {%- endcomment -%}
+        <div class="tv-popup__variants"></div>
+
+        {%- comment -%} Add to cart button {%- endcomment -%}
+        <button type="button" class="tv-btn tv-btn--dark tv-popup__add-btn">
+          <span class="tv-btn__text">ADD TO CART</span>
+          <span class="tv-btn__arrow" aria-hidden="true">
+            <img
+              src="{{ 'tv-icon-arrow.svg' | asset_url }}"
+              alt=""
+              width="26"
+              height="12"
+              class="tv-btn__arrow-icon tv-btn__arrow-icon--light"
+            >
+          </span>
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+  {%- comment -%} ── END POPUP MODAL ──────────────────────────── {%- endcomment -%}
+
 </section>
 
 {% stylesheet %}
@@ -338,6 +396,243 @@
     transform: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   POPUP MODAL
+   Product quick view popup with variants
+   ───────────────────────────────────────────────────────────── */
+.tv-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Dark overlay */
+.tv-popup__overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}
+
+/* Modal card */
+.tv-popup__modal {
+  position: relative;
+  background-color: #FFFFFF;
+  max-width: 45rem; /* 720px */
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+/* Close button - top right */
+.tv-popup__close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.2s ease;
+  z-index: 2;
+}
+
+.tv-popup__close:hover {
+  transform: scale(1.1);
+}
+
+.tv-popup__close img {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Content padding */
+.tv-popup__content {
+  padding: 2rem;
+}
+
+/* Top row: Image + Info */
+.tv-popup__top {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.tv-popup__image {
+  width: 7.5rem; /* 120px */
+  height: 7.5rem;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #F5F5F5;
+}
+
+.tv-popup__info {
+  flex: 1;
+}
+
+.tv-popup__title {
+  font-family: var(--tv-font-primary);
+  font-size: 1.5rem; /* 24px */
+  font-weight: 400;
+  line-height: 1.3;
+  color: #000000;
+  margin: 0 0 0.5rem 0;
+}
+
+.tv-popup__price {
+  font-family: var(--tv-font-primary);
+  font-size: 1.25rem; /* 20px */
+  font-weight: 400;
+  color: #000000;
+  margin: 0;
+}
+
+/* Description */
+.tv-popup__description {
+  font-family: var(--tv-font-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #666666;
+  margin: 0 0 2rem 0;
+}
+
+/* Variants container */
+.tv-popup__variants {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Variant group */
+.tv-popup__variant-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tv-popup__variant-label {
+  font-family: var(--tv-font-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  color: #000000;
+  margin: 0;
+}
+
+/* Color variant buttons with dual strips */
+.tv-popup__variant-options--color {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.tv-variant-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem;
+  background-color: #FFFFFF;
+  border: 1.5px solid #E0E0E0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--tv-font-primary);
+  font-size: 1rem;
+  color: #000000;
+}
+
+.tv-variant-btn:hover {
+  border-color: #000000;
+}
+
+.tv-variant-btn--selected {
+  background-color: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+/* Dual color strips */
+.tv-variant-strips {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.tv-variant-strip {
+  width: 4px;
+  height: 1.5rem; /* 24px */
+  border-radius: 1px;
+}
+
+/* Size dropdown */
+.tv-popup__size-select {
+  width: 100%;
+  padding: 1rem;
+  font-family: var(--tv-font-primary);
+  font-size: 1rem;
+  color: #000000;
+  background-color: #FFFFFF;
+  border: 1.5px solid #E0E0E0;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23000000' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 3rem;
+}
+
+.tv-popup__size-select:focus {
+  outline: none;
+  border-color: #000000;
+}
+
+/* Add to cart button */
+.tv-popup__add-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Mobile responsive */
+@media screen and (max-width: 749px) {
+  .tv-popup__modal {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+
+  .tv-popup__content {
+    padding: 1.5rem;
+  }
+
+  .tv-popup__top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .tv-popup__image {
+    width: 10rem; /* 160px on mobile */
+    height: 10rem;
+  }
+
+  .tv-popup__variant-options--color {
+    grid-template-columns: 1fr; /* single column on mobile */
+  }
+}
 {% endstylesheet %}
 
 {% schema %}
@@ -394,3 +689,6 @@
   ]
 }
 {% endschema %}
+
+
+<script src="{{ 'tv-grid.js' | asset_url }}" defer></script>
