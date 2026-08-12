@@ -89,21 +89,6 @@
     {%- comment -%} Drawer panel - slides from left {%- endcomment -%}
     <div class="tv-drawer__panel" role="dialog" aria-modal="true" aria-label="Mobile menu">
       
-      {%- comment -%} Close button {%- endcomment -%}
-      <button
-        type="button"
-        class="tv-drawer__close"
-        aria-label="Close menu"
-      >
-        <img
-          src="{{ 'tv-icon-close.svg' | asset_url }}"
-          alt=""
-          width="24"
-          height="24"
-          class="tv-drawer__close-icon"
-        >
-      </button>
-
       {%- comment -%} Announcement text {%- endcomment -%}
       {%- if announcement != blank -%}
         <p class="tv-drawer__announcement">{{ announcement }}</p>
@@ -423,6 +408,7 @@
   z-index: 1000;
   visibility: hidden;
   pointer-events: none;
+  overflow: hidden; /* prevent scroll when hidden */
 }
 
 /* Drawer open state */
@@ -441,10 +427,10 @@
   pointer-events: none; /* no overlay needed for full-width drawer */
 }
 
-/* Drawer panel - white container sliding from top */
+/* Drawer panel - white container sliding from top, BELOW topbar */
 .tv-drawer__panel {
   position: absolute;
-  top: 0;
+  top: var(--tv-topbar-height); /* start below topbar (64px) */
   left: 0;
   right: 0;
   width: 100%; /* full width on mobile */
@@ -454,7 +440,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 5rem 1.5rem 3rem; /* top padding for close button space, bottom for content */
+  padding: 2rem 1.5rem 3rem; /* normal padding, no extra space for close button */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* subtle shadow at bottom */
 }
 
@@ -462,37 +448,7 @@
   transform: translateY(0);
 }
 
-/* Close button - top left */
-.tv-drawer__close {
-  position: absolute;
-  top: 1.5rem;
-  left: 1.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: transform 0.2s ease;
-}
-
-.tv-drawer__close:hover {
-  transform: scale(1.1);
-}
-
-.tv-drawer__close:focus-visible {
-  outline: 2px solid #000000;
-  outline-offset: 2px;
-}
-
-.tv-drawer__close-icon {
-  display: block;
-  width: 1.5rem;
-  height: 1.5rem;
-}
+/* No separate close button needed - hamburger toggles in topbar */
 
 /* Announcement text - centered, top spacing for close button */
 .tv-drawer__announcement {
@@ -647,7 +603,7 @@
     position: relative;
   }
 
-  /* Hamburger button - clickable */
+  /* Hamburger button - clickable, toggles to close icon */
   .tv-banner__topbar::before {
     content: '☰';
     position: absolute;
@@ -658,6 +614,7 @@
     cursor: pointer;
     padding: 0.5rem;
     margin: -0.5rem;
+    transition: all 0.2s ease;
   }
 
   .tv-banner__logo-link {
@@ -733,6 +690,11 @@
   /* Marquee — smaller font on mobile */
   .tv-marquee__text {
     font-size: 0.875rem; /* 14px */
+  }
+
+  /* Hamburger icon toggle when menu open */
+  .tv-banner__topbar.tv-menu-open::before {
+    content: '✕'; /* close icon when menu open */
   }
 }
 {% endstylesheet %}
