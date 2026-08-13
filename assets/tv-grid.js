@@ -392,7 +392,7 @@ class TvProductPopup {
       const variant = product.variants.find(v => v.available) || product.variants[0];
       if (!variant) return false;
 
-      // Include sections so cart drawer updates
+      // Include sections so cart drawer updates automatically
       const sectionIds = [];
       document.querySelectorAll('cart-items-component').forEach(el => {
         if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
@@ -406,9 +406,10 @@ class TvProductPopup {
       const addRes = await fetch('/cart/add.js', { method: 'POST', body: fd });
       if (!addRes.ok) return false;
 
+      const addData = await addRes.json();
       console.log('[TvPopup] ✅ Soft Winter Jacket added successfully!');
 
-      // Update cart icon count
+      // Update cart icon
       const cartRes = await fetch('/cart.js');
       const cart    = await cartRes.json();
       document.querySelectorAll('cart-icon').forEach(el => {
@@ -419,6 +420,38 @@ class TvProductPopup {
       sessionStorage.setItem('cart-count', JSON.stringify({
         value: String(cart.item_count), timestamp: Date.now()
       }));
+
+      // Update cart drawer — fetch updated section HTML via Shopify Sections API
+      // This is the most reliable approach — no dependency on internal events
+      if (sectionIds.length) {
+        try {
+          const sectionsParam = sectionIds.join(',');
+          const sectionsRes   = await fetch(`/?sections=${sectionsParam}`);
+
+          if (sectionsRes.ok) {
+            const sectionsData = await sectionsRes.json();
+
+            sectionIds.forEach(sectionId => {
+              const newHtml = sectionsData?.[sectionId];
+              if (!newHtml) return;
+
+              // Find the section wrapper in DOM and replace its innerHTML
+              const sectionEl = document.getElementById(`shopify-section-${sectionId}`);
+              if (sectionEl) {
+                const parser  = new DOMParser();
+                const doc     = parser.parseFromString(newHtml, 'text/html');
+                const newBody = doc.body.firstElementChild;
+                if (newBody) {
+                  sectionEl.innerHTML = newBody.innerHTML;
+                  console.log('[TvPopup] Cart section re-rendered:', sectionId);
+                }
+              }
+            });
+          }
+        } catch (e) {
+          console.log('[TvPopup] Section re-render failed:', e.message);
+        }
+      }
 
       return true;
     } catch (e) {
