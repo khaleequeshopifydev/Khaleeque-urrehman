@@ -392,35 +392,52 @@ class TvProductPopup {
       const variant = product.variants.find(v => v.available) || product.variants[0];
       if (!variant) return false;
 
-      // Include sections so cart drawer updates
+      // ── Use a hidden product-form-component to add jacket ──
+      // This is IDENTICAL to how Horizon adds any product —
+      // product-form-component handles ALL cart events automatically
       const sectionIds = [];
       document.querySelectorAll('cart-items-component').forEach(el => {
         if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
       });
 
-      const fd = new FormData();
-      fd.append('id', variant.id);
-      fd.append('quantity', '1');
-      sectionIds.forEach(id => fd.append('sections', id));
+      const arrowUrl = this.popup.querySelector('.tv-popup__form-container')?.dataset?.arrowUrl || '';
 
-      const addRes = await fetch('/cart/add.js', { method: 'POST', body: fd });
-      if (!addRes.ok) return false;
+      // Create a temporary hidden form component
+      const tempContainer = document.createElement('div');
+      tempContainer.style.display = 'none';
+      tempContainer.innerHTML = `
+        <product-form-component
+          data-product-id="${product.id}"
+          data-product-url="/products/${product.handle}"
+          on:submit="/handleSubmit"
+          data-quantity-default="1"
+        >
+          <div class="visually-hidden" aria-live="assertive" role="status" ref="liveRegion"></div>
+          <form method="post" action="/cart/add" data-type="add-to-cart-form" id="tv-jacket-form">
+            <input type="hidden" name="id" ref="variantId" value="${variant.id}">
+            <input type="hidden" name="quantity" value="1">
+            ${sectionIds.map(id => `<input type="hidden" name="sections" value="${id}">`).join('')}
+            <button type="submit" name="add"></button>
+          </form>
+        </product-form-component>
+      `;
+      document.body.appendChild(tempContainer);
 
-      console.log('[TvPopup] ✅ Soft Winter Jacket added successfully!');
+      // Wait for custom element to upgrade then submit
+      await customElements.whenDefined('product-form-component');
+      await new Promise(r => setTimeout(r, 100)); // small tick for connectedCallback
 
-      // Update cart icon count
-      const cartRes = await fetch('/cart.js');
-      const cart    = await cartRes.json();
-      document.querySelectorAll('cart-icon').forEach(el => {
-        if (typeof el.renderCartBubble === 'function') {
-          el.renderCartBubble(cart.item_count, true);
-        }
-      });
-      sessionStorage.setItem('cart-count', JSON.stringify({
-        value: String(cart.item_count), timestamp: Date.now()
-      }));
+      const form = tempContainer.querySelector('form');
+      form?.querySelector('button')?.click();
 
+      // Clean up after submission
+      setTimeout(() => {
+        document.body.removeChild(tempContainer);
+      }, 3000);
+
+      console.log('[TvPopup] ✅ Jacket form submitted via product-form-component');
       return true;
+
     } catch (e) {
       console.log(`[TvPopup] Handle "${handle}" failed:`, e.message);
       return false;
