@@ -4,10 +4,9 @@
  * Tisso Vison — Product Grid JavaScript
  *
  * Add to cart strategy:
- *   - Uses Horizon's product-form-component for normal adds
- *   - For Black + Medium: validates BEFORE submit, fetches jacket
- *     variant, then adds BOTH items in ONE /cart/add.js call
- *     so cart drawer updates once with all items
+ *   - Normal add: product-form-component handles cart update
+ *   - Black + Medium: custom fetch with BOTH items in one call,
+ *     then manually trigger cart-icon + cart drawer update
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -26,9 +25,6 @@ class TvProductPopup {
     this.init();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────────────────────────
   init() {
     document.querySelectorAll('.tv-grid__plus-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -105,7 +101,6 @@ class TvProductPopup {
     container.innerHTML = '';
 
     const optionsWithIndex = this.currentProduct.options.map((opt, i) => ({ opt, i }));
-
     const sorted = [...optionsWithIndex].sort((a, b) => {
       const na = (a.opt.name || a.opt).toLowerCase();
       const nb = (b.opt.name || b.opt).toLowerCase();
@@ -250,14 +245,27 @@ class TvProductPopup {
       if (t) t.textContent = val;
     }
 
+    // Update hidden variant ID in form
     const variantInput = this.popup.querySelector('.tv-popup__variant-id');
     if (variantInput) variantInput.value = this.selectedVariant.id;
 
     this.renderVariants();
+
+    // Update which button to show (normal vs custom for Black+Medium)
+    this.updateButtonVisibility();
   }
 
   // ─────────────────────────────────────────────────────────────
-  // RENDER CART FORM (Horizon product-form-component)
+  // RENDER CART FORM
+  //
+  // TWO separate buttons in ONE form:
+  //   1. Normal submit button → handled by product-form-component
+  //      (used when NOT Black+Medium)
+  //   2. Custom "tv-add-btn" → calls our addToCart() directly
+  //      (shown only when Black+Medium is selected)
+  //
+  // This avoids any conflict with product-form-component's
+  // internal submit handler.
   // ─────────────────────────────────────────────────────────────
   renderCartForm() {
     const container = this.popup.querySelector('.tv-popup__form-container');
@@ -283,7 +291,9 @@ class TvProductPopup {
           <input type="hidden" name="id" ref="variantId" class="tv-popup__variant-id" value="${this.selectedVariant.id}">
           <input type="hidden" name="quantity" value="1">
           ${sectionIds.map(id => `<input type="hidden" name="sections" value="${id}">`).join('')}
-          <button type="submit" name="add" class="tv-popup__add-btn">
+
+          <!-- Normal submit: handled by product-form-component -->
+          <button type="submit" name="add" class="tv-popup__add-btn tv-popup__normal-submit">
             <span class="tv-btn__text">ADD TO CART</span>
             <span class="tv-btn__arrow" aria-hidden="true">
               <img src="${arrowUrl}" alt="" width="26" height="12" class="tv-btn__arrow-icon tv-btn__arrow-icon--light">
@@ -291,74 +301,83 @@ class TvProductPopup {
           </button>
         </form>
       </product-form-component>
+
+      <!-- Custom button: only used for Black+Medium, bypasses product-form-component -->
+      <button type="button" class="tv-popup__add-btn tv-popup__custom-submit" style="display:none;">
+        <span class="tv-btn__text">ADD TO CART</span>
+        <span class="tv-btn__arrow" aria-hidden="true">
+          <img src="${arrowUrl}" alt="" width="26" height="12" class="tv-btn__arrow-icon tv-btn__arrow-icon--light">
+        </span>
+      </button>
     `;
 
-    // Intercept submit for Black+Medium rule
-    const form = container.querySelector('form');
-    if (form) {
-      form.addEventListener('submit', (e) => this.handleFormSubmit(e, form), true);
+    // Bind custom button click
+    const customBtn = container.querySelector('.tv-popup__custom-submit');
+    if (customBtn) {
+      customBtn.addEventListener('click', () => this.addBothItems());
     }
+
+    // Update button visibility based on current selections
+    this.updateButtonVisibility();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // HANDLE FORM SUBMIT
-  // Validates Black + Medium BEFORE submit.
-  // If matched: prevent default, add BOTH items in ONE API call.
-  // If not matched: let product-form-component handle normally.
-  // ─────────────────────────────────────────────────────────────
-  async handleFormSubmit(e, form) {
+  // Show correct button based on Black+Medium selection
+  updateButtonVisibility() {
+    const container = this.popup.querySelector('.tv-popup__form-container');
+    if (!container) return;
+
     const isBlack  = Object.values(this.selectedOptions).some(v => v.toLowerCase() === 'black');
     const isMedium = Object.values(this.selectedOptions).some(v =>
       v.toLowerCase() === 'medium' || v.toLowerCase() === 'm'
     );
+    const isSpecial = isBlack && isMedium;
 
-    // Not Black+Medium — normal submit, Horizon handles everything
-    if (!isBlack || !isMedium) {
-      console.log('[TvPopup] Normal add to cart');
-      return;
-    }
+    const normalBtn = container.querySelector('.tv-popup__normal-submit');
+    const customBtn = container.querySelector('.tv-popup__custom-submit');
 
-    // Black + Medium — take over completely
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    console.log('[TvPopup] Black + Medium detected — adding both items in one call...');
+    if (normalBtn) normalBtn.style.display = isSpecial ? 'none'  : 'flex';
+    if (customBtn) customBtn.style.display = isSpecial ? 'flex' : 'none';
+  }
 
-    const btn     = form.querySelector('.tv-popup__add-btn');
-    const btnText = btn ? btn.querySelector('.tv-btn__text') : null;
+  // ─────────────────────────────────────────────────────────────
+  // ADD BOTH ITEMS (Black + Medium rule)
+  // Called by custom button — one API call, no conflicts
+  // ─────────────────────────────────────────────────────────────
+  async addBothItems() {
+    const container = this.popup.querySelector('.tv-popup__form-container');
+    const btn       = container ? container.querySelector('.tv-popup__custom-submit') : null;
+    const btnText   = btn ? btn.querySelector('.tv-btn__text') : null;
 
-    // Loading state
     if (btnText) btnText.textContent = 'ADDING...';
     if (btn) { btn.disabled = true; btn.dataset.loading = 'true'; }
 
     try {
-      // Get section IDs for cart drawer update
       const sectionIds = [];
       document.querySelectorAll('cart-items-component').forEach(el => {
         if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
       });
 
-      // Build items array — start with main product
+      // Build items: main product + jacket
       const items = [{ id: Number(this.selectedVariant.id), quantity: 1 }];
 
-      // Find jacket variant ID
       const jacketId = await this.getJacketVariantId();
       if (jacketId) {
         items.push({ id: jacketId, quantity: 1 });
         console.log('[TvPopup] Adding jacket variant:', jacketId);
       }
 
-      // ONE API call with both items + sections for drawer update
+      // Single API call with both items
       const res = await fetch('/cart/add.js', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, sections: sectionIds })
+        body:    JSON.stringify({ items, sections: sectionIds })
       });
 
       if (!res.ok) throw new Error('Cart add failed');
       const data = await res.json();
       console.log('[TvPopup] ✅ Both items added:', data);
 
-      // Update cart icon count
+      // Update cart icon
       const cartRes = await fetch('/cart.js');
       const cart    = await cartRes.json();
       document.querySelectorAll('cart-icon').forEach(el => {
@@ -370,23 +389,17 @@ class TvProductPopup {
         value: String(cart.item_count), timestamp: Date.now()
       }));
 
-      // Update cart drawer via sections HTML in response
+      // Update cart drawer via sections in response
       if (data.sections) {
         sectionIds.forEach(sectionId => {
           const html = data.sections[sectionId];
           if (!html) return;
-
-          // Use morphSection if available (Horizon internal)
-          const cartItemsEl = document.querySelector(`cart-items-component[data-section-id="${sectionId}"]`);
-          if (cartItemsEl && cartItemsEl.closest) {
-            const sectionWrapper = cartItemsEl.closest(`#shopify-section-${sectionId}`);
-            if (sectionWrapper) {
-              const parser = new DOMParser();
-              const doc    = parser.parseFromString(html, 'text/html');
-              // Replace section inner content
-              sectionWrapper.innerHTML = doc.body.innerHTML;
-              console.log('[TvPopup] Cart drawer section updated:', sectionId);
-            }
+          const sectionWrapper = document.getElementById(`shopify-section-${sectionId}`);
+          if (sectionWrapper) {
+            const parser = new DOMParser();
+            const doc    = parser.parseFromString(html, 'text/html');
+            sectionWrapper.innerHTML = doc.body.innerHTML;
+            console.log('[TvPopup] Cart section updated:', sectionId);
           }
         });
       }
@@ -400,7 +413,7 @@ class TvProductPopup {
     }
   }
 
-  // Get Soft Winter Jacket first available variant ID
+  // Get Soft Winter Jacket variant ID
   async getJacketVariantId() {
     const handles = ['dark-winter-jacket', 'soft-winter-jacket', 'winter-jacket-soft'];
     for (const handle of handles) {
@@ -410,7 +423,7 @@ class TvProductPopup {
         const product = await res.json();
         const variant = product.variants.find(v => v.available) || product.variants[0];
         if (variant) {
-          console.log(`[TvPopup] Jacket found: "${product.title}" — variant ${variant.id}`);
+          console.log(`[TvPopup] Jacket found: "${product.title}" variant ${variant.id}`);
           return Number(variant.id);
         }
       } catch (e) { continue; }
