@@ -2,14 +2,13 @@
  * tv-grid.js
  * ─────────────────────────────────────────────────────────────
  * Tisso Vison — Product Grid JavaScript
- * Handles popup modal, variant selection, and add to cart
+ * Popup: variant rendering, custom dropdown, add to cart
  *
- * Cart update strategy (same as Horizon theme):
- *   1. POST to /cart/add.js with FormData
- *   2. GET /cart.js for updated cart state
- *   3. Directly call cart-icon's renderCartBubble (public method)
- *   4. Dispatch CartLinesUpdateEvent (Horizon's internal event)
- *      so the cart drawer also updates
+ * Add to cart strategy:
+ *   Use a real <form> + <product-form-component> exactly like
+ *   Horizon does on every product page. This guarantees cart
+ *   icon, cart drawer, and all theme listeners update instantly
+ *   — no custom events, no manual DOM patching needed.
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -18,10 +17,8 @@ class TvProductPopup {
     this.popup = document.getElementById('tv-product-popup');
     if (!this.popup) return;
 
-    this.overlay   = this.popup.querySelector('.tv-popup__overlay');
-    this.modal     = this.popup.querySelector('.tv-popup__modal');
-    this.closeBtn  = this.popup.querySelector('.tv-popup__close');
-    this.addToCartBtn = this.popup.querySelector('.tv-popup__add-btn');
+    this.overlay  = this.popup.querySelector('.tv-popup__overlay');
+    this.closeBtn = this.popup.querySelector('.tv-popup__close');
 
     this.currentProduct  = null;
     this.selectedVariant = null;
@@ -31,10 +28,10 @@ class TvProductPopup {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // INIT
+  // INIT — bind static listeners
   // ─────────────────────────────────────────────────────────────
   init() {
-    // Plus button clicks — open popup
+    // Plus buttons on grid cards
     document.querySelectorAll('.tv-grid__plus-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -46,7 +43,7 @@ class TvProductPopup {
     // Close button
     this.closeBtn?.addEventListener('click', () => this.close());
 
-    // Overlay click
+    // Click on overlay
     this.overlay?.addEventListener('click', () => this.close());
 
     // ESC key
@@ -58,27 +55,24 @@ class TvProductPopup {
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.tv-custom-dropdown')) this.closeAllDropdowns();
     });
-
-    // Add to cart
-    this.addToCartBtn?.addEventListener('click', () => this.addToCart());
   }
 
   // ─────────────────────────────────────────────────────────────
-  // LOAD PRODUCT
+  // LOAD PRODUCT via Shopify product JSON endpoint
   // ─────────────────────────────────────────────────────────────
   async loadProduct(handle) {
     try {
-      const response = await fetch(`/products/${handle}.js`);
-      if (!response.ok) throw new Error('Product not found');
+      const res = await fetch(`/products/${handle}.js`);
+      if (!res.ok) throw new Error('Product not found');
 
-      this.currentProduct  = await response.json();
+      this.currentProduct  = await res.json();
       this.selectedOptions = {};
-      this.selectedVariant = this.currentProduct.variants[0]; // default first variant
+      this.selectedVariant = this.currentProduct.variants[0];
 
       this.renderPopup();
       this.open();
-    } catch (error) {
-      console.error('[TvPopup] Error loading product:', error);
+    } catch (err) {
+      console.error('[TvPopup] loadProduct error:', err);
       alert('Unable to load product. Please try again.');
     }
   }
@@ -87,180 +81,165 @@ class TvProductPopup {
   // RENDER POPUP CONTENT
   // ─────────────────────────────────────────────────────────────
   renderPopup() {
-    const product = this.currentProduct;
+    const p = this.currentProduct;
 
     // Image
     const img = this.popup.querySelector('.tv-popup__image');
-    if (img && product.featured_image) {
-      img.src = product.featured_image;
-      img.alt = product.title;
-    }
+    if (img) { img.src = p.featured_image || ''; img.alt = p.title; }
 
     // Title
     const title = this.popup.querySelector('.tv-popup__title');
-    if (title) title.textContent = product.title;
+    if (title) title.textContent = p.title;
 
     // Price
     const price = this.popup.querySelector('.tv-popup__price');
     if (price) price.textContent = this.formatMoney(this.selectedVariant.price);
 
-    // Description (strip HTML tags)
+    // Description — strip HTML
     const desc = this.popup.querySelector('.tv-popup__description');
     if (desc) {
       const tmp = document.createElement('div');
-      tmp.innerHTML = product.description;
+      tmp.innerHTML = p.description;
       desc.textContent = tmp.textContent || tmp.innerText || '';
     }
 
+    // Variants
     this.renderVariants();
+
+    // Build the Horizon-compatible add-to-cart form
+    this.renderCartForm();
   }
 
   // ─────────────────────────────────────────────────────────────
-  // RENDER VARIANTS
+  // RENDER VARIANT OPTIONS
   // ─────────────────────────────────────────────────────────────
   renderVariants() {
     const container = this.popup.querySelector('.tv-popup__variants');
     if (!container) return;
-
     container.innerHTML = '';
 
     // Preserve original index before sorting
-    const optionsWithIndex = this.currentProduct.options.map((option, originalIndex) => ({
-      option,
-      originalIndex
-    }));
+    const optionsWithIndex = this.currentProduct.options.map((opt, i) => ({ opt, i }));
 
-    // Sort: Color FIRST, then Size
+    // Color first, Size second
     const sorted = [...optionsWithIndex].sort((a, b) => {
-      const nameA = (a.option.name || a.option).toLowerCase();
-      const nameB = (b.option.name || b.option).toLowerCase();
-      if (nameA.includes('color') || nameA.includes('colour')) return -1;
-      if (nameB.includes('color') || nameB.includes('colour')) return 1;
-      if (nameA.includes('size')) return 1;
-      if (nameB.includes('size')) return -1;
+      const na = (a.opt.name || a.opt).toLowerCase();
+      const nb = (b.opt.name || b.opt).toLowerCase();
+      if (na.includes('color') || na.includes('colour')) return -1;
+      if (nb.includes('color') || nb.includes('colour')) return 1;
+      if (na.includes('size')) return 1;
+      if (nb.includes('size')) return -1;
       return 0;
     });
 
-    sorted.forEach(({ option, originalIndex }) => {
-      const optionName   = option.name || option;
-      const optionValues = option.values || this.getOptionValues(originalIndex);
-      if (!optionValues || optionValues.length === 0) return;
+    sorted.forEach(({ opt, i }) => {
+      const name   = opt.name || opt;
+      const values = opt.values || this.getOptionValues(i);
+      if (!values?.length) return;
 
-      const groupDiv = document.createElement('div');
-      groupDiv.className = 'tv-popup__variant-group';
+      const group = document.createElement('div');
+      group.className = 'tv-popup__variant-group';
 
-      const label = document.createElement('label');
-      label.className = 'tv-popup__variant-label';
-      label.textContent = optionName;
-      groupDiv.appendChild(label);
+      const lbl = document.createElement('label');
+      lbl.className = 'tv-popup__variant-label';
+      lbl.textContent = name;
+      group.appendChild(lbl);
 
-      const isColor = optionName.toLowerCase() === 'color' || optionName.toLowerCase() === 'colour';
-      const isSize  = optionName.toLowerCase() === 'size';
+      const isColor = /colou?r/i.test(name);
+      const isSize  = /size/i.test(name);
 
       if (isColor) {
-        this.renderColorOptions(groupDiv, optionName, optionValues);
+        this.renderColorOptions(group, name, values);
       } else if (isSize) {
-        this.renderSizeOptions(groupDiv, optionName, optionValues);
+        this.renderSizeDropdown(group, name, values);
       } else {
-        this.renderColorOptions(groupDiv, optionName, optionValues); // default: pill buttons
+        this.renderColorOptions(group, name, values);
       }
 
-      container.appendChild(groupDiv);
+      container.appendChild(group);
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // COLOR OPTION BUTTONS
-  // ─────────────────────────────────────────────────────────────
   renderColorOptions(container, optionName, values) {
-    const optionsDiv = document.createElement('div');
-    optionsDiv.className = 'tv-popup__variant-options tv-popup__variant-options--color';
+    const wrap = document.createElement('div');
+    wrap.className = 'tv-popup__variant-options tv-popup__variant-options--color';
 
-    values.forEach(value => {
+    values.forEach(val => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tv-variant-btn';
       btn.dataset.option = optionName;
-      btn.dataset.value  = value;
-      if (this.selectedOptions[optionName] === value) btn.classList.add('tv-variant-btn--selected');
+      btn.dataset.value  = val;
+      if (this.selectedOptions[optionName] === val) btn.classList.add('tv-variant-btn--selected');
 
-      // Single left-edge color strip (~6px, Figma: 5.807px)
       const strip = document.createElement('span');
       strip.className = 'tv-variant-strip';
-      strip.style.backgroundColor = this.getColorHex(value);
+      strip.style.backgroundColor = this.getColorHex(val);
       btn.appendChild(strip);
 
-      const labelSpan = document.createElement('span');
-      labelSpan.className = 'tv-variant-label';
-      labelSpan.textContent = value;
-      btn.appendChild(labelSpan);
+      const span = document.createElement('span');
+      span.className = 'tv-variant-label';
+      span.textContent = val;
+      btn.appendChild(span);
 
-      btn.addEventListener('click', () => this.selectOption(optionName, value));
-      optionsDiv.appendChild(btn);
+      btn.addEventListener('click', () => this.selectOption(optionName, val));
+      wrap.appendChild(btn);
     });
 
-    container.appendChild(optionsDiv);
+    container.appendChild(wrap);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CUSTOM SIZE DROPDOWN
-  // ─────────────────────────────────────────────────────────────
-  renderSizeOptions(container, optionName, values) {
-    const dropdownWrapper = document.createElement('div');
-    dropdownWrapper.className = 'tv-custom-dropdown';
-    dropdownWrapper.dataset.option = optionName;
+  renderSizeDropdown(container, optionName, values) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'tv-custom-dropdown';
+    wrapper.dataset.option = optionName;
 
-    // Trigger button
-    const selectedBtn = document.createElement('button');
-    selectedBtn.type = 'button';
-    selectedBtn.className = 'tv-custom-dropdown__selected';
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'tv-custom-dropdown__selected';
 
-    const selectedText = document.createElement('span');
-    selectedText.className = 'tv-custom-dropdown__text';
-    selectedText.textContent = this.selectedOptions[optionName] || 'Choose your size';
-    selectedBtn.appendChild(selectedText);
+    const text = document.createElement('span');
+    text.className = 'tv-custom-dropdown__text';
+    text.textContent = this.selectedOptions[optionName] || 'Choose your size';
+    trigger.appendChild(text);
 
-    // Chevron
     const chevron = document.createElement('span');
     chevron.className = 'tv-custom-dropdown__chevron';
-    chevron.innerHTML = '<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    selectedBtn.appendChild(chevron);
+    chevron.innerHTML = '<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L6 6L11 1" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    trigger.appendChild(chevron);
 
-    // Menu
     const menu = document.createElement('div');
     menu.className = 'tv-custom-dropdown__menu';
     menu.style.display = 'none';
 
-    values.forEach(value => {
-      const option = document.createElement('div');
-      option.className = 'tv-custom-dropdown__option';
-      option.textContent = value;
-      option.dataset.value = value;
-      if (this.selectedOptions[optionName] === value) option.classList.add('tv-custom-dropdown__option--selected');
+    values.forEach(val => {
+      const item = document.createElement('div');
+      item.className = 'tv-custom-dropdown__option';
+      item.textContent = val;
+      item.dataset.value = val;
+      if (this.selectedOptions[optionName] === val) item.classList.add('tv-custom-dropdown__option--selected');
 
-      option.addEventListener('click', (e) => {
+      item.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.selectOption(optionName, value);
+        this.selectOption(optionName, val);
         this.closeAllDropdowns();
       });
-
-      menu.appendChild(option);
+      menu.appendChild(item);
     });
 
-    // Toggle open/close
-    selectedBtn.addEventListener('click', (e) => {
+    trigger.addEventListener('click', (e) => {
       e.stopPropagation();
       const isOpen = menu.style.display === 'block';
       this.closeAllDropdowns();
       if (!isOpen) {
         menu.style.display = 'block';
-        dropdownWrapper.classList.add('tv-custom-dropdown--open');
+        wrapper.classList.add('tv-custom-dropdown--open');
       }
     });
 
-    dropdownWrapper.appendChild(selectedBtn);
-    dropdownWrapper.appendChild(menu);
-    container.appendChild(dropdownWrapper);
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(menu);
+    container.appendChild(wrapper);
   }
 
   closeAllDropdowns() {
@@ -269,16 +248,16 @@ class TvProductPopup {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // SELECT OPTION & UPDATE VARIANT
+  // SELECT OPTION
   // ─────────────────────────────────────────────────────────────
-  selectOption(optionName, value) {
-    this.selectedOptions[optionName] = value;
+  selectOption(name, val) {
+    this.selectedOptions[name] = val;
 
-    // Find matching variant
-    this.selectedVariant = this.currentProduct.variants.find(variant =>
-      Object.keys(this.selectedOptions).every(key => {
-        const idx = this.currentProduct.options.findIndex(opt => (opt.name || opt) === key);
-        return variant.options[idx] === this.selectedOptions[key];
+    // Match variant
+    this.selectedVariant = this.currentProduct.variants.find(v =>
+      Object.keys(this.selectedOptions).every(k => {
+        const idx = this.currentProduct.options.findIndex(o => (o.name || o) === k);
+        return v.options[idx] === this.selectedOptions[k];
       })
     ) || this.currentProduct.variants[0];
 
@@ -286,278 +265,58 @@ class TvProductPopup {
     const price = this.popup.querySelector('.tv-popup__price');
     if (price) price.textContent = this.formatMoney(this.selectedVariant.price);
 
-    // Update dropdown display text
-    const dropdown = this.popup.querySelector(`.tv-custom-dropdown[data-option="${optionName}"]`);
-    if (dropdown) {
-      const textEl = dropdown.querySelector('.tv-custom-dropdown__text');
-      if (textEl) textEl.textContent = value;
+    // Update dropdown display
+    const dd = this.popup.querySelector(`.tv-custom-dropdown[data-option="${name}"]`);
+    if (dd) {
+      const t = dd.querySelector('.tv-custom-dropdown__text');
+      if (t) t.textContent = val;
     }
+
+    // Update hidden variant ID in the form
+    const variantInput = this.popup.querySelector('.tv-popup__variant-id');
+    if (variantInput) variantInput.value = this.selectedVariant.id;
 
     this.renderVariants();
   }
 
   // ─────────────────────────────────────────────────────────────
-  // ADD TO CART  (same mechanism as Horizon product-form.js)
+  // BUILD HORIZON-COMPATIBLE CART FORM
+  // Wraps a <product-form-component> around a real <form>
+  // so ALL of Horizon's cart listeners fire automatically.
   // ─────────────────────────────────────────────────────────────
-  async addToCart() {
-    console.log('[TvPopup] Add to Cart clicked');
-    console.log('[TvPopup] Variant:', this.selectedVariant);
-    console.log('[TvPopup] Options:', this.selectedOptions);
+  renderCartForm() {
+    const container = this.popup.querySelector('.tv-popup__form-container');
+    if (!container) return;
 
-    if (!this.selectedVariant) {
-      alert('Please select all options');
-      return;
-    }
-    if (!this.selectedVariant.available) {
-      alert('This variant is out of stock');
-      return;
-    }
-
-    const addBtn     = this.popup.querySelector('.tv-popup__add-btn');
-    const btnText    = addBtn.querySelector('.tv-btn__text');
-    const origText   = btnText.textContent;
-
-    try {
-      // ── Loading state (CSS driven via data-loading attribute) ─
-      btnText.textContent       = 'ADDING...';
-      addBtn.disabled           = true;
-      addBtn.dataset.loading    = 'true';
-      addBtn.removeAttribute('data-added');
-
-      // ── POST to Shopify AJAX Cart API ─────────────────────
-      // Include sections param so cart drawer HTML comes back
-      // in the response — exactly what Horizon's product-form.js does
-      const cartItemsEl = document.querySelector('cart-items-component');
-      const cartSectionId = cartItemsEl?.dataset?.sectionId || '';
-
-      const formData = new FormData();
-      formData.append('id',       this.selectedVariant.id);
-      formData.append('quantity', '1');
-      if (cartSectionId) {
-        formData.append('sections', cartSectionId);
-      }
-
-      const addRes = await fetch('/cart/add.js', {
-        method: 'POST',
-        body:   formData
-      });
-
-      if (!addRes.ok) {
-        const err = await addRes.json().catch(() => ({ message: 'Failed to add to cart' }));
-        throw new Error(err.description || err.message || 'Failed to add to cart');
-      }
-
-      const addData = await addRes.json();
-      console.log('[TvPopup] Product added to cart', addData);
-
-      // ── Auto-add "Soft Winter Jacket" if Black + Medium ───
-      await this.autoAddSoftWinterJacket();
-
-      // ── Fetch updated cart ────────────────────────────────
-      const cartRes = await fetch('/cart.js');
-      const cart    = await cartRes.json();
-      console.log('[TvPopup] Updated cart:', cart);
-
-      // ── Update cart icon directly (Horizon public method) ─
-      document.querySelectorAll('cart-icon').forEach(el => {
-        if (typeof el.renderCartBubble === 'function') {
-          el.renderCartBubble(cart.item_count, true);
-        }
-      });
-
-      // ── Persist count for page transitions ───────────────
-      sessionStorage.setItem('cart-count', JSON.stringify({
-        value:     String(cart.item_count),
-        timestamp: Date.now()
-      }));
-
-      // ── Re-render cart drawer section via sectionRenderer ─
-      // If sections HTML came back in addData, morph it directly.
-      // Otherwise trigger sectionRenderer to re-fetch.
-      if (cartSectionId) {
-        const sectionsHtml = addData?.sections?.[cartSectionId];
-        if (sectionsHtml && cartItemsEl) {
-          // Sections HTML returned — dispatch event so cart-items-component morphs itself
-          // This is exactly what Horizon's product-form.js does
-          const deferredPromise = Promise.resolve({
-            cart: { totalQuantity: cart.item_count },
-            detail: {
-              sections:  addData.sections,
-              items:     cart.items,
-              itemCount: cart.item_count,
-              source:    'tv-popup'
-            }
-          });
-
-          cartItemsEl.dispatchEvent(new CustomEvent('shopify:cart:lines-update', {
-            bubbles: true,
-            detail: {
-              action:  'add',
-              context: 'product',
-              promise: deferredPromise
-            }
-          }));
-          console.log('[TvPopup] Cart drawer morphed via sections HTML');
-        } else {
-          // No sections HTML — fallback: call fetchCartData then re-render
-          if (cartItemsEl && typeof cartItemsEl.fetchCartData === 'function') {
-            cartItemsEl.fetchCartData().then(() => {
-              console.log('[TvPopup] Cart drawer re-fetched');
-            }).catch(() => {});
-          }
-        }
-      }
-
-      // ── Success state (black bg, just "ADDED" text) ───────
-      btnText.textContent    = 'ADDED';
-      addBtn.dataset.added   = 'true';
-      delete addBtn.dataset.loading;
-
-      setTimeout(() => {
-        this.close();
-        btnText.textContent  = origText;
-        addBtn.disabled      = false;
-        delete addBtn.dataset.added;
-        delete addBtn.dataset.loading;
-      }, 900);
-
-    } catch (error) {
-      console.error('[TvPopup] Add to cart error:', error);
-      btnText.textContent  = origText;
-      addBtn.disabled      = false;
-      delete addBtn.dataset.loading;
-      delete addBtn.dataset.added;
-      alert(error.message || 'Failed to add to cart. Please try again.');
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // AUTO-ADD SOFT WINTER JACKET (Black + Medium rule)
-  // ─────────────────────────────────────────────────────────────
-  // AUTO-ADD SOFT WINTER JACKET (Black + Medium rule)
-  // ─────────────────────────────────────────────────────────────
-  async autoAddSoftWinterJacket() {
-    const isBlack = Object.values(this.selectedOptions).some(v => v.toLowerCase() === 'black');
-    const isMedium = Object.values(this.selectedOptions).some(v =>
-      v.toLowerCase() === 'medium' || v.toLowerCase() === 'm'
-    );
-
-    console.log(`[TvPopup] Auto-add check — Black: ${isBlack}, Medium: ${isMedium}`);
-    if (!isBlack || !isMedium) return;
-
-    console.log('[TvPopup] Black + Medium detected! Adding Soft Winter Jacket...');
-
-    try {
-      // STEP 1: Search by title using Shopify Predictive Search API
-      // This is the most reliable way - finds by actual product title
-      const searchRes = await fetch(
-        `/search/suggest.json?q=Soft+Winter+Jacket&resources[type]=product&resources[limit]=5`
-      );
-
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
-        const products = searchData?.resources?.results?.products || [];
-        console.log('[TvPopup] Search results:', products);
-
-        // Find exact or close match by title
-        const match = products.find(p =>
-          p.title.toLowerCase().includes('soft winter jacket') ||
-          p.title.toLowerCase() === 'soft winter jacket'
-        );
-
-        if (match) {
-          console.log('[TvPopup] Found via search:', match.title, '| Handle:', match.handle);
-          const added = await this.addProductByHandle(match.handle);
-          if (added) return;
-        }
-      }
-
-      // STEP 2: Fallback — try known handle formats directly
-      const handles = [
-        'dark-winter-jacket',    // confirmed handle from Shopify admin
-        'soft-winter-jacket',
-        'soft-winter-jacket-1',
-        'winter-jacket-soft',
-        'winter-soft-jacket'
-      ];
-
-      for (const handle of handles) {
-        console.log(`[TvPopup] Trying handle: "${handle}"`);
-        const added = await this.addProductByHandle(handle);
-        if (added) return;
-      }
-
-      console.warn('[TvPopup] ⚠️ Soft Winter Jacket not found via search or handles.');
-
-    } catch (error) {
-      console.error('[TvPopup] Auto-add error:', error);
-    }
-  }
-
-  // Helper: fetch product by handle and add to cart
-  async addProductByHandle(handle) {
-    try {
-      const res = await fetch(`/products/${handle}.js`);
-      if (!res.ok) return false;
-
-      const product = await res.json();
-      console.log('[TvPopup] Product found:', product.title);
-
-      const variant = product.variants.find(v => v.available) || product.variants[0];
-      if (!variant) return false;
-
-      const fd = new FormData();
-      fd.append('id',       variant.id);
-      fd.append('quantity', '1');
-
-      const addRes = await fetch('/cart/add.js', { method: 'POST', body: fd });
-
-      if (addRes.ok) {
-        console.log('[TvPopup] ✅ Soft Winter Jacket auto-added! Variant ID:', variant.id);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────────────────────────
-  getOptionValues(optionIndex) {
-    const values = new Set();
-    this.currentProduct.variants.forEach(v => {
-      if (v.options[optionIndex]) values.add(v.options[optionIndex]);
+    const product    = this.currentProduct;
+    const arrowUrl   = container.dataset.arrowUrl || '';
+    const sectionIds = [];
+    document.querySelectorAll('cart-items-component').forEach(el => {
+      if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
     });
-    return Array.from(values);
-  }
 
-  getColorHex(colorName) {
-    const map = {
-      white:  '#FFFFFF',
-      black:  '#000000',
-      red:    '#FF0000',
-      blue:   '#0000FF',
-      green:  '#00CC66',
-      yellow: '#FFFF00',
-      orange: '#FFA500',
-      purple: '#800080',
-      pink:   '#FFC0CB',
-      brown:  '#A52A2A',
-      grey:   '#808080',
-      gray:   '#808080',
-      navy:   '#000080',
-      beige:  '#F5F5DC',
-      silver: '#C0C0C0',
-      gold:   '#FFD700'
-    };
-    return map[colorName.toLowerCase()] || '#CCCCCC';
-  }
+    container.innerHTML = `
+      <product-form-component
+        data-product-id="${product.id}"
+        data-product-url="/products/${product.handle}"
+        on:submit="/handleSubmit"
+        data-quantity-default="1"
+      >
+        <div class="visually-hidden" aria-live="assertive" role="status" ref="liveRegion"></div>
+        <form method="post" action="/cart/add" id="tv-cart-form-${product.id}" data-type="add-to-cart-form">
+          <input type="hidden" name="id" ref="variantId" class="tv-popup__variant-id" value="${this.selectedVariant.id}">
+          <input type="hidden" name="quantity" value="1">
+          ${sectionIds.map(id => `<input type="hidden" name="sections" value="${id}">`).join('')}
 
-  formatMoney(cents) {
-    // Format as European: "70,00€"
-    return `${(cents / 100).toFixed(2).replace('.', ',')}€`;
+          <button type="submit" name="add" class="tv-popup__add-btn">
+            <span class="tv-btn__text">ADD TO CART</span>
+            <span class="tv-btn__arrow" aria-hidden="true">
+              <img src="${arrowUrl}" alt="" width="26" height="12" class="tv-btn__arrow-icon tv-btn__arrow-icon--light">
+            </span>
+          </button>
+        </form>
+      </product-form-component>
+    `;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -575,6 +334,29 @@ class TvProductPopup {
     this.currentProduct  = null;
     this.selectedVariant = null;
     this.selectedOptions = {};
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────────
+  getOptionValues(idx) {
+    const s = new Set();
+    this.currentProduct.variants.forEach(v => { if (v.options[idx]) s.add(v.options[idx]); });
+    return [...s];
+  }
+
+  getColorHex(name) {
+    const map = {
+      white:'#FFFFFF', black:'#000000', red:'#FF0000', blue:'#0000FF',
+      green:'#00CC66', yellow:'#FFFF00', orange:'#FFA500', purple:'#800080',
+      pink:'#FFC0CB', brown:'#A52A2A', grey:'#808080', gray:'#808080',
+      navy:'#000080', beige:'#F5F5DC', silver:'#C0C0C0', gold:'#FFD700'
+    };
+    return map[name.toLowerCase()] || '#CCCCCC';
+  }
+
+  formatMoney(cents) {
+    return `${(cents / 100).toFixed(2).replace('.', ',')}€`;
   }
 }
 
