@@ -2,13 +2,12 @@
  * tv-grid.js
  * ─────────────────────────────────────────────────────────────
  * Tisso Vison — Product Grid JavaScript
- * Popup: variant rendering, custom dropdown, add to cart
  *
  * Add to cart strategy:
- *   Use a real <form> + <product-form-component> exactly like
- *   Horizon does on every product page. This guarantees cart
- *   icon, cart drawer, and all theme listeners update instantly
- *   — no custom events, no manual DOM patching needed.
+ *   - Uses Horizon's product-form-component for normal adds
+ *   - For Black + Medium: validates BEFORE submit, fetches jacket
+ *     variant, then adds BOTH items in ONE /cart/add.js call
+ *     so cart drawer updates once with all items
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -28,10 +27,9 @@ class TvProductPopup {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // INIT — bind static listeners
+  // INIT
   // ─────────────────────────────────────────────────────────────
   init() {
-    // Plus buttons on grid cards
     document.querySelectorAll('.tv-grid__plus-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -40,25 +38,20 @@ class TvProductPopup {
       });
     });
 
-    // Close button
     this.closeBtn?.addEventListener('click', () => this.close());
-
-    // Click on overlay
     this.overlay?.addEventListener('click', () => this.close());
 
-    // ESC key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.popup.style.display !== 'none') this.close();
     });
 
-    // Close custom dropdowns when clicking outside
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.tv-custom-dropdown')) this.closeAllDropdowns();
     });
   }
 
   // ─────────────────────────────────────────────────────────────
-  // LOAD PRODUCT via Shopify product JSON endpoint
+  // LOAD PRODUCT
   // ─────────────────────────────────────────────────────────────
   async loadProduct(handle) {
     try {
@@ -78,24 +71,20 @@ class TvProductPopup {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // RENDER POPUP CONTENT
+  // RENDER POPUP
   // ─────────────────────────────────────────────────────────────
   renderPopup() {
     const p = this.currentProduct;
 
-    // Image
     const img = this.popup.querySelector('.tv-popup__image');
     if (img) { img.src = p.featured_image || ''; img.alt = p.title; }
 
-    // Title
     const title = this.popup.querySelector('.tv-popup__title');
     if (title) title.textContent = p.title;
 
-    // Price
     const price = this.popup.querySelector('.tv-popup__price');
     if (price) price.textContent = this.formatMoney(this.selectedVariant.price);
 
-    // Description — strip HTML
     const desc = this.popup.querySelector('.tv-popup__description');
     if (desc) {
       const tmp = document.createElement('div');
@@ -103,32 +92,27 @@ class TvProductPopup {
       desc.textContent = tmp.textContent || tmp.innerText || '';
     }
 
-    // Variants
     this.renderVariants();
-
-    // Build the Horizon-compatible add-to-cart form
     this.renderCartForm();
   }
 
   // ─────────────────────────────────────────────────────────────
-  // RENDER VARIANT OPTIONS
+  // RENDER VARIANTS
   // ─────────────────────────────────────────────────────────────
   renderVariants() {
     const container = this.popup.querySelector('.tv-popup__variants');
     if (!container) return;
     container.innerHTML = '';
 
-    // Preserve original index before sorting
     const optionsWithIndex = this.currentProduct.options.map((opt, i) => ({ opt, i }));
 
-    // Color first, Size second
     const sorted = [...optionsWithIndex].sort((a, b) => {
       const na = (a.opt.name || a.opt).toLowerCase();
       const nb = (b.opt.name || b.opt).toLowerCase();
-      if (na.includes('color') || na.includes('colour')) return -1;
-      if (nb.includes('color') || nb.includes('colour')) return 1;
-      if (na.includes('size')) return 1;
-      if (nb.includes('size')) return -1;
+      if (/colou?r/.test(na)) return -1;
+      if (/colou?r/.test(nb)) return 1;
+      if (/size/.test(na)) return 1;
+      if (/size/.test(nb)) return -1;
       return 0;
     });
 
@@ -145,12 +129,9 @@ class TvProductPopup {
       lbl.textContent = name;
       group.appendChild(lbl);
 
-      const isColor = /colou?r/i.test(name);
-      const isSize  = /size/i.test(name);
-
-      if (isColor) {
+      if (/colou?r/i.test(name)) {
         this.renderColorOptions(group, name, values);
-      } else if (isSize) {
+      } else if (/size/i.test(name)) {
         this.renderSizeDropdown(group, name, values);
       } else {
         this.renderColorOptions(group, name, values);
@@ -243,8 +224,8 @@ class TvProductPopup {
   }
 
   closeAllDropdowns() {
-    this.popup.querySelectorAll('.tv-custom-dropdown__menu').forEach(m => m.style.display = 'none');
-    this.popup.querySelectorAll('.tv-custom-dropdown').forEach(d => d.classList.remove('tv-custom-dropdown--open'));
+    this.popup.querySelectorAll('.tv-custom-dropdown__menu').forEach(m => { m.style.display = 'none'; });
+    this.popup.querySelectorAll('.tv-custom-dropdown').forEach(d => { d.classList.remove('tv-custom-dropdown--open'); });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -253,7 +234,6 @@ class TvProductPopup {
   selectOption(name, val) {
     this.selectedOptions[name] = val;
 
-    // Match variant
     this.selectedVariant = this.currentProduct.variants.find(v =>
       Object.keys(this.selectedOptions).every(k => {
         const idx = this.currentProduct.options.findIndex(o => (o.name || o) === k);
@@ -261,18 +241,15 @@ class TvProductPopup {
       })
     ) || this.currentProduct.variants[0];
 
-    // Update price
     const price = this.popup.querySelector('.tv-popup__price');
     if (price) price.textContent = this.formatMoney(this.selectedVariant.price);
 
-    // Update dropdown display
     const dd = this.popup.querySelector(`.tv-custom-dropdown[data-option="${name}"]`);
     if (dd) {
       const t = dd.querySelector('.tv-custom-dropdown__text');
       if (t) t.textContent = val;
     }
 
-    // Update hidden variant ID in the form
     const variantInput = this.popup.querySelector('.tv-popup__variant-id');
     if (variantInput) variantInput.value = this.selectedVariant.id;
 
@@ -280,16 +257,15 @@ class TvProductPopup {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // BUILD HORIZON-COMPATIBLE CART FORM
-  // Wraps a <product-form-component> around a real <form>
-  // so ALL of Horizon's cart listeners fire automatically.
+  // RENDER CART FORM (Horizon product-form-component)
   // ─────────────────────────────────────────────────────────────
   renderCartForm() {
     const container = this.popup.querySelector('.tv-popup__form-container');
     if (!container) return;
 
-    const product    = this.currentProduct;
-    const arrowUrl   = container.dataset.arrowUrl || '';
+    const product  = this.currentProduct;
+    const arrowUrl = container.dataset.arrowUrl || '';
+
     const sectionIds = [];
     document.querySelectorAll('cart-items-component').forEach(el => {
       if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
@@ -307,8 +283,7 @@ class TvProductPopup {
           <input type="hidden" name="id" ref="variantId" class="tv-popup__variant-id" value="${this.selectedVariant.id}">
           <input type="hidden" name="quantity" value="1">
           ${sectionIds.map(id => `<input type="hidden" name="sections" value="${id}">`).join('')}
-
-          <button type="submit" name="add" class="tv-popup__add-btn" data-loading="false">
+          <button type="submit" name="add" class="tv-popup__add-btn">
             <span class="tv-btn__text">ADD TO CART</span>
             <span class="tv-btn__arrow" aria-hidden="true">
               <img src="${arrowUrl}" alt="" width="26" height="12" class="tv-btn__arrow-icon tv-btn__arrow-icon--light">
@@ -318,130 +293,130 @@ class TvProductPopup {
       </product-form-component>
     `;
 
-    // Attach submit listener for loading state + auto-add rule
+    // Intercept submit for Black+Medium rule
     const form = container.querySelector('form');
-    if (form) form.addEventListener('submit', () => this.onFormSubmit(form));
+    if (form) {
+      form.addEventListener('submit', (e) => this.handleFormSubmit(e, form), true);
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
-  // FORM SUBMIT — loading state + Black+Medium auto-add rule
+  // HANDLE FORM SUBMIT
+  // Validates Black + Medium BEFORE submit.
+  // If matched: prevent default, add BOTH items in ONE API call.
+  // If not matched: let product-form-component handle normally.
   // ─────────────────────────────────────────────────────────────
-  onFormSubmit(form) {
-    const btn     = form.querySelector('.tv-popup__add-btn');
-    const btnText = btn?.querySelector('.tv-btn__text');
-    if (!btn || !btnText) return;
-
-    // Show loading state
-    btnText.textContent    = 'ADDING...';
-    btn.dataset.loading    = 'true';
-
-    // After Horizon finishes cart update, run auto-add rule
-    // Listen for the CartLinesUpdateEvent that product-form-component dispatches
-    const onCartUpdate = () => {
-      // Trigger auto-add (it checks Black + Medium internally)
-      this.autoAddSoftWinterJacket();
-
-      // Reset button text after short delay
-      setTimeout(() => {
-        if (btnText) btnText.textContent = 'ADD TO CART';
-        if (btn) {
-          btn.dataset.loading = 'false';
-          delete btn.dataset.loading;
-        }
-      }, 1500);
-    };
-
-    // product-form-component dispatches on document — listen once
-    document.addEventListener('shopify:cart:lines-update', onCartUpdate, { once: true });
-    // Fallback timeout in case event doesn't fire
-    setTimeout(onCartUpdate, 3000);
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // AUTO-ADD SOFT WINTER JACKET (Black + Medium rule)
-  // Handle confirmed from Shopify admin: "dark-winter-jacket"
-  // ─────────────────────────────────────────────────────────────
-  async autoAddSoftWinterJacket() {
-    const isBlack = Object.values(this.selectedOptions).some(v =>
-      v.toLowerCase() === 'black'
-    );
+  async handleFormSubmit(e, form) {
+    const isBlack  = Object.values(this.selectedOptions).some(v => v.toLowerCase() === 'black');
     const isMedium = Object.values(this.selectedOptions).some(v =>
       v.toLowerCase() === 'medium' || v.toLowerCase() === 'm'
     );
 
-    console.log(`[TvPopup] Auto-add check — Black: ${isBlack}, Medium: ${isMedium}`);
-    if (!isBlack || !isMedium) return;
-
-    console.log('[TvPopup] Black + Medium detected — adding Soft Winter Jacket...');
-
-    const handles = ['dark-winter-jacket', 'soft-winter-jacket', 'winter-jacket-soft'];
-    for (const handle of handles) {
-      const added = await this.addProductByHandle(handle);
-      if (added) return;
+    // Not Black+Medium — normal submit, Horizon handles everything
+    if (!isBlack || !isMedium) {
+      console.log('[TvPopup] Normal add to cart');
+      return;
     }
 
-    console.warn('[TvPopup] ⚠️ Soft Winter Jacket not found. Tried:', handles);
-  }
+    // Black + Medium — take over completely
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    console.log('[TvPopup] Black + Medium detected — adding both items in one call...');
 
-  async addProductByHandle(handle) {
+    const btn     = form.querySelector('.tv-popup__add-btn');
+    const btnText = btn ? btn.querySelector('.tv-btn__text') : null;
+
+    // Loading state
+    if (btnText) btnText.textContent = 'ADDING...';
+    if (btn) { btn.disabled = true; btn.dataset.loading = 'true'; }
+
     try {
-      const res = await fetch(`/products/${handle}.js`);
-      if (!res.ok) return false;
-
-      const product = await res.json();
-      const variant = product.variants.find(v => v.available) || product.variants[0];
-      if (!variant) return false;
-
-      // ── Use a hidden product-form-component to add jacket ──
-      // This is IDENTICAL to how Horizon adds any product —
-      // product-form-component handles ALL cart events automatically
+      // Get section IDs for cart drawer update
       const sectionIds = [];
       document.querySelectorAll('cart-items-component').forEach(el => {
         if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
       });
 
-      const arrowUrl = this.popup.querySelector('.tv-popup__form-container')?.dataset?.arrowUrl || '';
+      // Build items array — start with main product
+      const items = [{ id: Number(this.selectedVariant.id), quantity: 1 }];
 
-      // Create a temporary hidden form component
-      const tempContainer = document.createElement('div');
-      tempContainer.style.display = 'none';
-      tempContainer.innerHTML = `
-        <product-form-component
-          data-product-id="${product.id}"
-          data-product-url="/products/${product.handle}"
-          on:submit="/handleSubmit"
-          data-quantity-default="1"
-        >
-          <div class="visually-hidden" aria-live="assertive" role="status" ref="liveRegion"></div>
-          <form method="post" action="/cart/add" data-type="add-to-cart-form" id="tv-jacket-form">
-            <input type="hidden" name="id" ref="variantId" value="${variant.id}">
-            <input type="hidden" name="quantity" value="1">
-            ${sectionIds.map(id => `<input type="hidden" name="sections" value="${id}">`).join('')}
-            <button type="submit" name="add"></button>
-          </form>
-        </product-form-component>
-      `;
-      document.body.appendChild(tempContainer);
+      // Find jacket variant ID
+      const jacketId = await this.getJacketVariantId();
+      if (jacketId) {
+        items.push({ id: jacketId, quantity: 1 });
+        console.log('[TvPopup] Adding jacket variant:', jacketId);
+      }
 
-      // Wait for custom element to upgrade then submit
-      await customElements.whenDefined('product-form-component');
-      await new Promise(r => setTimeout(r, 100)); // small tick for connectedCallback
+      // ONE API call with both items + sections for drawer update
+      const res = await fetch('/cart/add.js', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, sections: sectionIds })
+      });
 
-      const form = tempContainer.querySelector('form');
-      form?.querySelector('button')?.click();
+      if (!res.ok) throw new Error('Cart add failed');
+      const data = await res.json();
+      console.log('[TvPopup] ✅ Both items added:', data);
 
-      // Clean up after submission
-      setTimeout(() => {
-        document.body.removeChild(tempContainer);
-      }, 3000);
+      // Update cart icon count
+      const cartRes = await fetch('/cart.js');
+      const cart    = await cartRes.json();
+      document.querySelectorAll('cart-icon').forEach(el => {
+        if (typeof el.renderCartBubble === 'function') {
+          el.renderCartBubble(cart.item_count, true);
+        }
+      });
+      sessionStorage.setItem('cart-count', JSON.stringify({
+        value: String(cart.item_count), timestamp: Date.now()
+      }));
 
-      console.log('[TvPopup] ✅ Jacket form submitted via product-form-component');
-      return true;
+      // Update cart drawer via sections HTML in response
+      if (data.sections) {
+        sectionIds.forEach(sectionId => {
+          const html = data.sections[sectionId];
+          if (!html) return;
 
-    } catch (e) {
-      console.log(`[TvPopup] Handle "${handle}" failed:`, e.message);
-      return false;
+          // Use morphSection if available (Horizon internal)
+          const cartItemsEl = document.querySelector(`cart-items-component[data-section-id="${sectionId}"]`);
+          if (cartItemsEl && cartItemsEl.closest) {
+            const sectionWrapper = cartItemsEl.closest(`#shopify-section-${sectionId}`);
+            if (sectionWrapper) {
+              const parser = new DOMParser();
+              const doc    = parser.parseFromString(html, 'text/html');
+              // Replace section inner content
+              sectionWrapper.innerHTML = doc.body.innerHTML;
+              console.log('[TvPopup] Cart drawer section updated:', sectionId);
+            }
+          }
+        });
+      }
+
+    } catch (err) {
+      console.error('[TvPopup] Add to cart failed:', err);
+      alert('Failed to add to cart. Please try again.');
+    } finally {
+      if (btnText) btnText.textContent = 'ADD TO CART';
+      if (btn) { btn.disabled = false; delete btn.dataset.loading; }
     }
+  }
+
+  // Get Soft Winter Jacket first available variant ID
+  async getJacketVariantId() {
+    const handles = ['dark-winter-jacket', 'soft-winter-jacket', 'winter-jacket-soft'];
+    for (const handle of handles) {
+      try {
+        const res = await fetch(`/products/${handle}.js`);
+        if (!res.ok) continue;
+        const product = await res.json();
+        const variant = product.variants.find(v => v.available) || product.variants[0];
+        if (variant) {
+          console.log(`[TvPopup] Jacket found: "${product.title}" — variant ${variant.id}`);
+          return Number(variant.id);
+        }
+      } catch (e) { continue; }
+    }
+    console.warn('[TvPopup] ⚠️ Jacket not found');
+    return null;
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -450,7 +425,7 @@ class TvProductPopup {
   open() {
     this.popup.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    setTimeout(() => this.closeBtn?.focus(), 100);
+    setTimeout(() => { if (this.closeBtn) this.closeBtn.focus(); }, 100);
   }
 
   close() {
@@ -485,9 +460,7 @@ class TvProductPopup {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────────────────────────
+// Init
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => new TvProductPopup());
 } else {
