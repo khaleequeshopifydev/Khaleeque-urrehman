@@ -308,7 +308,7 @@ class TvProductPopup {
           <input type="hidden" name="quantity" value="1">
           ${sectionIds.map(id => `<input type="hidden" name="sections" value="${id}">`).join('')}
 
-          <button type="submit" name="add" class="tv-popup__add-btn">
+          <button type="submit" name="add" class="tv-popup__add-btn" data-loading="false">
             <span class="tv-btn__text">ADD TO CART</span>
             <span class="tv-btn__arrow" aria-hidden="true">
               <img src="${arrowUrl}" alt="" width="26" height="12" class="tv-btn__arrow-icon tv-btn__arrow-icon--light">
@@ -317,6 +317,114 @@ class TvProductPopup {
         </form>
       </product-form-component>
     `;
+
+    // Attach submit listener for loading state + auto-add rule
+    const form = container.querySelector('form');
+    if (form) form.addEventListener('submit', () => this.onFormSubmit(form));
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // FORM SUBMIT — loading state + Black+Medium auto-add rule
+  // ─────────────────────────────────────────────────────────────
+  onFormSubmit(form) {
+    const btn     = form.querySelector('.tv-popup__add-btn');
+    const btnText = btn?.querySelector('.tv-btn__text');
+    if (!btn || !btnText) return;
+
+    // Show loading state
+    btnText.textContent    = 'ADDING...';
+    btn.dataset.loading    = 'true';
+
+    // After Horizon finishes cart update, run auto-add rule
+    // Listen for the CartLinesUpdateEvent that product-form-component dispatches
+    const onCartUpdate = () => {
+      // Trigger auto-add (it checks Black + Medium internally)
+      this.autoAddSoftWinterJacket();
+
+      // Reset button text after short delay
+      setTimeout(() => {
+        if (btnText) btnText.textContent = 'ADD TO CART';
+        if (btn) {
+          btn.dataset.loading = 'false';
+          delete btn.dataset.loading;
+        }
+      }, 1500);
+    };
+
+    // product-form-component dispatches on document — listen once
+    document.addEventListener('shopify:cart:lines-update', onCartUpdate, { once: true });
+    // Fallback timeout in case event doesn't fire
+    setTimeout(onCartUpdate, 3000);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // AUTO-ADD SOFT WINTER JACKET (Black + Medium rule)
+  // Handle confirmed from Shopify admin: "dark-winter-jacket"
+  // ─────────────────────────────────────────────────────────────
+  async autoAddSoftWinterJacket() {
+    const isBlack = Object.values(this.selectedOptions).some(v =>
+      v.toLowerCase() === 'black'
+    );
+    const isMedium = Object.values(this.selectedOptions).some(v =>
+      v.toLowerCase() === 'medium' || v.toLowerCase() === 'm'
+    );
+
+    console.log(`[TvPopup] Auto-add check — Black: ${isBlack}, Medium: ${isMedium}`);
+    if (!isBlack || !isMedium) return;
+
+    console.log('[TvPopup] Black + Medium detected — adding Soft Winter Jacket...');
+
+    const handles = ['dark-winter-jacket', 'soft-winter-jacket', 'winter-jacket-soft'];
+    for (const handle of handles) {
+      const added = await this.addProductByHandle(handle);
+      if (added) return;
+    }
+
+    console.warn('[TvPopup] ⚠️ Soft Winter Jacket not found. Tried:', handles);
+  }
+
+  async addProductByHandle(handle) {
+    try {
+      const res = await fetch(`/products/${handle}.js`);
+      if (!res.ok) return false;
+
+      const product = await res.json();
+      const variant = product.variants.find(v => v.available) || product.variants[0];
+      if (!variant) return false;
+
+      // Include sections so cart drawer updates
+      const sectionIds = [];
+      document.querySelectorAll('cart-items-component').forEach(el => {
+        if (el.dataset.sectionId) sectionIds.push(el.dataset.sectionId);
+      });
+
+      const fd = new FormData();
+      fd.append('id', variant.id);
+      fd.append('quantity', '1');
+      sectionIds.forEach(id => fd.append('sections', id));
+
+      const addRes = await fetch('/cart/add.js', { method: 'POST', body: fd });
+      if (!addRes.ok) return false;
+
+      console.log('[TvPopup] ✅ Soft Winter Jacket added successfully!');
+
+      // Update cart icon count
+      const cartRes = await fetch('/cart.js');
+      const cart    = await cartRes.json();
+      document.querySelectorAll('cart-icon').forEach(el => {
+        if (typeof el.renderCartBubble === 'function') {
+          el.renderCartBubble(cart.item_count, true);
+        }
+      });
+      sessionStorage.setItem('cart-count', JSON.stringify({
+        value: String(cart.item_count), timestamp: Date.now()
+      }));
+
+      return true;
+    } catch (e) {
+      console.log(`[TvPopup] Handle "${handle}" failed:`, e.message);
+      return false;
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
