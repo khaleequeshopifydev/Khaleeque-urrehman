@@ -156,31 +156,54 @@
   {%- comment -%} ── 2. HERO ──────────────────────────────────── {%- endcomment -%}
   <div class="tv-banner__hero">
 
-    {%- comment -%} Background illustration — full bleed {%- endcomment -%}
+    {%- comment -%} Background illustration — desktop uses main image, mobile uses -2 variant {%- endcomment -%}
     {%- if illustration != blank -%}
-      <img
-        src="{{ illustration | image_url: width: 1440 }}"
-        srcset="
-          {{ illustration | image_url: width: 750 }} 750w,
-          {{ illustration | image_url: width: 1100 }} 1100w,
-          {{ illustration | image_url: width: 1440 }} 1440w
-        "
-        sizes="100vw"
-        alt=""
-        class="tv-banner__illustration"
-        width="{{ illustration.width }}"
-        height="{{ illustration.height }}"
-        loading="eager"
-        fetchpriority="high"
-      >
+      <picture>
+        {%- comment -%} Mobile: use -2 image if customizer image is set, otherwise fallback asset {%- endcomment -%}
+        <source
+          media="(max-width: 749px)"
+          srcset="{{ 'tv-banner-illustration-2.png' | asset_url }}"
+        >
+        {%- comment -%} Desktop: customizer illustration {%- endcomment -%}
+        <source
+          media="(min-width: 750px)"
+          srcset="
+            {{ illustration | image_url: width: 750 }} 750w,
+            {{ illustration | image_url: width: 1100 }} 1100w,
+            {{ illustration | image_url: width: 1440 }} 1440w
+          "
+          sizes="100vw"
+        >
+        <img
+          src="{{ illustration | image_url: width: 1440 }}"
+          alt=""
+          class="tv-banner__illustration"
+          width="{{ illustration.width }}"
+          height="{{ illustration.height }}"
+          loading="eager"
+          fetchpriority="high"
+        >
+      </picture>
     {%- else -%}
-      <img
-        src="{{ 'tv-banner-illustration.png' | asset_url }}"
-        alt=""
-        class="tv-banner__illustration"
-        loading="eager"
-        fetchpriority="high"
-      >
+      <picture>
+        {%- comment -%} Mobile fallback: -2 asset {%- endcomment -%}
+        <source
+          media="(max-width: 749px)"
+          srcset="{{ 'tv-banner-illustration-2.png' | asset_url }}"
+        >
+        {%- comment -%} Desktop fallback: original asset {%- endcomment -%}
+        <source
+          media="(min-width: 750px)"
+          srcset="{{ 'tv-banner-illustration.png' | asset_url }}"
+        >
+        <img
+          src="{{ 'tv-banner-illustration.png' | asset_url }}"
+          alt=""
+          class="tv-banner__illustration"
+          loading="eager"
+          fetchpriority="high"
+        >
+      </picture>
     {%- endif -%}
 
     {%- comment -%} Content box — heading + description {%- endcomment -%}
