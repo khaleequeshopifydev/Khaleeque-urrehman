@@ -124,10 +124,9 @@
       {%- comment -%} Content container {%- endcomment -%}
       <div class="tv-popup__content">
         
-        {%- comment -%} Top row: Image + Product info + Description (same row) {%- endcomment -%}
+        {%- comment -%} Top row: Image + Product info + Description {%- endcomment -%}
         <div class="tv-popup__top">
-          <img class="tv-popup__image" src="" alt="" width="120" height="120">
-          
+          <img class="tv-popup__image" src="" alt="" width="120" height="140">
           <div class="tv-popup__info">
             <h3 class="tv-popup__title"></h3>
             <p class="tv-popup__price"></p>
@@ -135,22 +134,19 @@
           </div>
         </div>
 
-        {%- comment -%} Variants container - populated by JavaScript {%- endcomment -%}
+        {%- comment -%} Variants — populated by JS {%- endcomment -%}
         <div class="tv-popup__variants"></div>
 
-        {%- comment -%} Add to cart button {%- endcomment -%}
-        <button type="button" class="tv-btn tv-btn--dark tv-popup__add-btn">
-          <span class="tv-btn__text">ADD TO CART</span>
-          <span class="tv-btn__arrow" aria-hidden="true">
-            <img
-              src="{{ 'tv-icon-arrow.svg' | asset_url }}"
-              alt=""
-              width="26"
-              height="12"
-              class="tv-btn__arrow-icon tv-btn__arrow-icon--light"
-            >
-          </span>
-        </button>
+        {%- comment -%}
+          Form container — JS injects a real <product-form-component> + <form>
+          here so Horizon's own cart machinery handles the add-to-cart,
+          updating the cart drawer and counter automatically.
+          The arrow asset URL is stored in a data attribute so JS can use it.
+        {%- endcomment -%}
+        <div
+          class="tv-popup__form-container"
+          data-arrow-url="{{ 'tv-icon-arrow.svg' | asset_url }}"
+        ></div>
 
       </div>
     </div>
